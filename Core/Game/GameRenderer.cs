@@ -1,8 +1,8 @@
-using System;
 using System.Collections.Generic;
-using GAME.CORE;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+
+namespace GAME.CORE;
 
 public static class GameRenderer
 {
@@ -11,6 +11,11 @@ public static class GameRenderer
 
     private static GraphicsDevice GraphicsDevice;
     private static SpriteBatch SpriteBatch;
+    private static SpriteFont GAME_FONT;
+
+    public static int GetScreenWidth() { return GameRenderer.GraphicsDevice.Viewport.Width; }
+
+    public static int GetScreenHeight() { return GameRenderer.GraphicsDevice.Viewport.Height; }
 
     public static bool InitializeRenderer(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice)
     {
@@ -23,6 +28,13 @@ public static class GameRenderer
         return true;
     }
 
+    public static void SetFont(SpriteFont FONT) { GameRenderer.GAME_FONT = FONT; }
+
+    public static void Write(string TEXT, Point POSITION, Color COLOR)
+    {
+       GameRenderer.SpriteBatch.DrawString(GameRenderer.GAME_FONT, TEXT, new Vector2(POSITION.X, POSITION.Y), COLOR);
+    }
+
     public static void AddElement(GameElement ELEMENT)
     {
         GameRenderer.RenderList.Add(ELEMENT);
@@ -33,26 +45,60 @@ public static class GameRenderer
         return GameRenderer.RenderList[INDEX];
     }
 
+    public static void Draw(GameElement ELEMENT)
+    {
+        //MOCK TEXTURE
+        Texture2D pixel = new Texture2D(GameRenderer.GraphicsDevice, 1, 1);
+        pixel.SetData(new[] { ELEMENT.GetRendererConfig().COLOR });
+        //MOCK TEXTURE
+
+        if(!(ELEMENT.GetRendererConfig().TEXT==null))
+        {
+            GameRenderer.Write(ELEMENT.GetRendererConfig().TEXT, ELEMENT.GetPosition(), ELEMENT.GetRendererConfig().COLOR);
+            return;
+        }
+        GameRenderer.SpriteBatch.Draw(pixel, ELEMENT.GetRectangle(), ELEMENT.GetRendererConfig().COLOR);
+    }
+
+    public static void Render(GameElement ELEMENT)
+    {
+        GameRenderer.SpriteBatch.Begin();
+
+        if(ELEMENT.VISIBLE) GameRenderer.Draw(ELEMENT);
+
+        GameRenderer.SpriteBatch.End();
+    }
+
     public static void Render()
     {
 
-        Console.WriteLine(GameRenderer.SpriteBatch == null);
-        Console.WriteLine(GameRenderer.GraphicsDevice == null);
-
         GameRenderer.SpriteBatch.Begin();
-        //MOCK TEXTURE
-        Texture2D pixel = new Texture2D(GameRenderer.GraphicsDevice, 1, 1);
-        pixel.SetData(new[] { Color.White });
-        //MOCK TEXTURE
 
         foreach(GameElement element in GameRenderer.RenderList)
         {
 
-            if(element.VISIBLE) GameRenderer.SpriteBatch.Draw(pixel, element.GetRectangle(), Color.White);
+            if(element.VISIBLE) GameRenderer.Draw(element);
         }
 
         GameRenderer.SpriteBatch.End();
     }
 
+    public static void RenderFromList(List<GameElement> CUSTOM_LIST)
+    {
+
+        GameRenderer.SpriteBatch.Begin();
+
+        foreach(GameElement element in CUSTOM_LIST)
+        {
+
+            if(element.VISIBLE) GameRenderer.Draw(element);
+        }
+
+        GameRenderer.SpriteBatch.End();
+    }
+
+    public static void Update() { foreach(GameElement element in GameRenderer.RenderList) element.Update(); }
+
+    public static void UpdateFromList(List<GameElement> CUSTOM_LIST) { foreach(GameElement element in CUSTOM_LIST) element.Update(); }
 
 }
