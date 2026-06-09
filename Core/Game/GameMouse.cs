@@ -6,7 +6,7 @@ namespace GAME.CORE;
 
 public static class GameMouse{
 
-    private static short CURSOR_SIZE = 20;
+    private static short CURSOR_SIZE = 1;
 
     private static MouseState GetState() { return Mouse.GetState(); }
 
