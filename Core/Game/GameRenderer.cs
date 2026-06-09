@@ -28,6 +28,11 @@ public static class GameRenderer
         GameRenderer.RenderList.Add(ELEMENT);
     }
 
+    public static GameElement GetElementByIndex(int INDEX)
+    {
+        return GameRenderer.RenderList[INDEX];
+    }
+
     public static void Render()
     {
 
@@ -42,12 +47,10 @@ public static class GameRenderer
 
         foreach(GameElement element in GameRenderer.RenderList)
         {
-            Console.WriteLine("RENDER");
 
             if(element.VISIBLE) GameRenderer.SpriteBatch.Draw(pixel, element.GetRectangle(), Color.White);
         }
 
-        Console.WriteLine("END");
         GameRenderer.SpriteBatch.End();
     }
 
