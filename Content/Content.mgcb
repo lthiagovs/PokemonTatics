@@ -32,6 +32,42 @@
 /processorParam:TextureFormat=Compressed
 /build:Fonts/File.spritefont;Fonts/GameFont.spritefont
 
+#begin Pokemons/Bulbasaur/portrait.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Pokemons/Bulbasaur/portrait.png
+
+#begin Pokemons/Ivysaur/portrait.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Pokemons/Ivysaur/portrait.png;Pokemons/Ivysaur/portrait
+
+#begin Pokemons/Venusaur/portrait.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Pokemons/Venusaur/portrait.png
+
 #begin UI/Icons/hp.png
 /importer:TextureImporter
 /processor:TextureProcessor
