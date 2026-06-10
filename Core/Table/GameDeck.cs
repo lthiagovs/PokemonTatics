@@ -50,6 +50,7 @@ public static class GameDeck
                 (short)cardW, (short)cardH, true);
             card.SetRendererConfig(new GameRendererConfig(Color.White, null, "UI/Windows/card", Rectangle.Empty, true) { SLICE_SIZE = 24, SLICE_PROPORTION = 2 });
             card.CONFIG = new GameInterfaceConfig(true, false);
+            card.SetPokemon(PokemonDecks[i]);
             DECK_ELEMENTS.Add(card);
 
             int nameH   = (int)(cardH * 0.18);
