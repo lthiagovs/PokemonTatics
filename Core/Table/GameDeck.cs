@@ -98,6 +98,8 @@ public static class GameDeck
         int innerW  = bgW - statsW - tileSize;
         int startX  = bgX + statsW + ((innerW - totalW) / 2);
 
+        int portraitSize = 40;
+
         for (int i = 0; i < DECK_SIZE; i++)
         {
             int cardX   = startX + i * (cardW + cardGap);
@@ -138,10 +140,21 @@ public static class GameDeck
             int nameY = (int)(cardH * 0.04);
 
             GameInterfaceElement cardName = new GameInterfaceElement(
-                (short)(cardX+30), (short)(bgY + cardY + nameY),
+                (short)cardX, (short)(bgY + cardY + nameY),
                 (short)cardW, (short)nameH, true);
             cardName.SetRendererConfig(Color.White, Rectangle.Empty, PokemonDecks[i].NAME);
             DECK_ELEMENTS.Add(cardName);
+
+            // PORTRAIT
+            int portraitX = cardX + (cardW / 2) - (portraitSize / 2);
+            int portraitY = bgY + cardY + (cardH / 2) - (portraitSize / 2);
+
+            var portrait = new GameInterfaceElement(
+                (short)portraitX, (short)portraitY,
+                (short)portraitSize, (short)portraitSize, true);
+            portrait.SetRendererConfig(Color.White, new Rectangle(0, 0, portraitSize, portraitSize), null,
+                $"Pokemons/{PokemonDecks[i].NAME}/portrait");
+            DECK_ELEMENTS.Add(portrait);
         }
 
         // STATS
