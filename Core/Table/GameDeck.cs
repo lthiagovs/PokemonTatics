@@ -26,6 +26,19 @@ public static class GameDeck
         { "bottom_right_corner", new Rectangle(32, 32, 16, 16) },
     };
 
+    private static readonly Dictionary<string, Rectangle> CARD = new()
+    {
+        { "top_left_corner",     new Rectangle( 0,  0, 24, 24) },
+        { "top_border",          new Rectangle(24,  0, 24, 24) },
+        { "top_right_corner",    new Rectangle(48,  0, 24, 24) },
+        { "left_border",         new Rectangle( 0, 24, 24, 24) },
+        { "tile",                new Rectangle(24, 24, 24, 24) },
+        { "right_border",        new Rectangle(48, 24, 24, 24) },
+        { "bottom_left_corner",  new Rectangle( 0, 48, 24, 24) },
+        { "bottom_border",       new Rectangle(24, 48, 24, 24) },
+        { "bottom_right_corner", new Rectangle(48, 48, 24, 24) },
+    };
+
     public static void Initialize()
     {
         int screenWidth  = GameRenderer.GetScreenWidth();
@@ -74,11 +87,12 @@ public static class GameDeck
         }
 
         // CARDS
-        int cardGap = tileSize / 4;
-        int cardH   = (int)(bgH * 0.75);
-        int cardW   = (int)(cardH * 0.65);
-        int totalW  = (DECK_SIZE * cardW) + ((DECK_SIZE - 1) * cardGap);
-        int cardY   = (bgH - cardH) / 2;
+        int cardGap  = tileSize / 4;
+        int cardH    = (int)(bgH * 0.50);
+        int cardW    = (int)(cardH * 0.90);
+        int totalW   = (DECK_SIZE * cardW) + ((DECK_SIZE - 1) * cardGap);
+        int cardY    = bgTile;
+        int cardTile = tileSize / 4;
 
         int statsW  = tileSize * 2;
         int innerW  = bgW - statsW - tileSize;
@@ -86,56 +100,82 @@ public static class GameDeck
 
         for (int i = 0; i < DECK_SIZE; i++)
         {
-            int cardX = startX + i * (cardW + cardGap);
-            GameInterfaceElement card = new GameInterfaceElement(
-                (short)cardX, (short)(bgY + cardY),
-                (short)cardW, (short)cardH,
-                true);
-            card.SetRendererConfig(Color.White, Rectangle.Empty);
-            card.MOUSE_HOVER = true;
+            int cardX   = startX + i * (cardW + cardGap);
+            int cTilesX = cardW / cardTile;
+            int cTilesY = cardH / cardTile;
 
-            int nameH = (int)(cardH * 0.20);
+            // CARD BORDER
+            for (int cy = 0; cy < cTilesY; cy++)
+            {
+                for (int cx = 0; cx < cTilesX; cx++)
+                {
+                    bool isTop    = cy == 0;
+                    bool isBottom = cy == cTilesY - 1;
+                    bool isLeft   = cx == 0;
+                    bool isRight  = cx == cTilesX - 1;
+
+                    Rectangle src;
+                    if      (isTop    && isLeft)  src = CARD["top_left_corner"];
+                    else if (isTop    && isRight) src = CARD["top_right_corner"];
+                    else if (isBottom && isLeft)  src = CARD["bottom_left_corner"];
+                    else if (isBottom && isRight) src = CARD["bottom_right_corner"];
+                    else if (isTop)               src = CARD["top_border"];
+                    else if (isBottom)            src = CARD["bottom_border"];
+                    else if (isLeft)              src = CARD["left_border"];
+                    else if (isRight)             src = CARD["right_border"];
+                    else                          src = CARD["tile"];
+
+                    var tile = new GameInterfaceElement(
+                        (short)(cardX + cx * cardTile), (short)(bgY + cardY + cy * cardTile),
+                        (short)cardTile, (short)cardTile, true);
+                    tile.SetRendererConfig(Color.White, src, null, "UI/Windows/card");
+                    DECK_ELEMENTS.Add(tile);
+                }
+            }
+
+            // CARD NAME
+            int nameH = (int)(cardH * 0.10);
             int nameY = (int)(cardH * 0.04);
-            GameInterfaceElement cardName = new GameInterfaceElement(
-                0, (short)nameY,
-                (short)cardW, (short)nameH,
-                true, card);
-            cardName.SetRendererConfig(Color.White, Rectangle.Empty, PokemonDecks[i].NAME);
 
-            DECK_ELEMENTS.Add(card);
+            GameInterfaceElement cardName = new GameInterfaceElement(
+                (short)(cardX+30), (short)(bgY + cardY + nameY),
+                (short)cardW, (short)nameH, true);
+            cardName.SetRendererConfig(Color.White, Rectangle.Empty, PokemonDecks[i].NAME);
             DECK_ELEMENTS.Add(cardName);
         }
 
         // STATS
-        int iconSize    = 20;
+        int iconW       = 20;
+        int iconH       = 22;
         int iconSpacing = 6;
-        int totalStatH  = (iconSize * 2) + iconSpacing;
+        int totalStatH  = (iconH * 2) + iconSpacing;
         int statStartY  = bgY + (bgH / 2) - (totalStatH / 2);
         int statIconX   = bgX + tileSize;
-        int statTextX   = statIconX + iconSize + (cardGap / 2);
-        int statTextW   = statsW - iconSize - cardGap;
+        int statTextX   = statIconX + iconW + (cardGap / 2);
+        int statTextW   = statsW - iconW - cardGap;
 
         // HP
         var iconHp = new GameInterfaceElement(
             (short)statIconX, (short)statStartY,
-            (short)iconSize, (short)iconSize, true);
-        iconHp.SetRendererConfig(Color.White, Rectangle.Empty, null, "UI/Icons/hp");
+            (short)iconW, (short)iconH, true);
 
         var textHp = new GameInterfaceElement(
             (short)statTextX, (short)statStartY,
-            (short)statTextW, (short)iconSize, true);
-        textHp.SetRendererConfig(Color.White, Rectangle.Empty, "HEALTH: X");
+            (short)statTextW, (short)iconH, true);
 
         // MANA
         var iconMana = new GameInterfaceElement(
-            (short)statIconX, (short)(statStartY + iconSize + iconSpacing),
-            (short)iconSize, (short)iconSize, true);
-        iconMana.SetRendererConfig(Color.White, Rectangle.Empty, null, "UI/Icons/mana");
+            (short)statIconX, (short)(statStartY + iconH + iconSpacing),
+            (short)iconW, (short)iconH, true);
 
         var textMana = new GameInterfaceElement(
-            (short)statTextX, (short)(statStartY + iconSize + iconSpacing),
-            (short)statTextW, (short)iconSize, true);
-        textMana.SetRendererConfig(Color.White, Rectangle.Empty, "MANA: X");
+            (short)statTextX, (short)(statStartY + iconH + iconSpacing),
+            (short)statTextW, (short)iconH, true);
+
+        textHp.SetRendererConfig(Color.White, Rectangle.Empty, "HEALTH : X");
+        textMana.SetRendererConfig(Color.White, Rectangle.Empty, "MANA : X");
+        iconHp.SetRendererConfig(Color.White, new Rectangle(0, 0, iconW, iconH), null, "UI/Icons/hp");
+        iconMana.SetRendererConfig(Color.White, new Rectangle(0, 0, iconW, iconH), null, "UI/Icons/mana");
 
         DECK_ELEMENTS.Add(iconHp);
         DECK_ELEMENTS.Add(textHp);
@@ -148,12 +188,10 @@ public static class GameDeck
         Random _random = new Random();
         GameDeck.PokemonDecks.Clear();
 
-        for(int i = 0;i < DECK_SIZE; i++)
+        for (int i = 0; i < DECK_SIZE; i++)
         {
-            int index = _random.Next(0, PokemonDatabase.PokemonList.Count-1);
+            int index = _random.Next(0, PokemonDatabase.PokemonList.Count - 1);
             PokemonDecks.Add(PokemonDatabase.PokemonList[index]);
-
         }
     }
-
 }
