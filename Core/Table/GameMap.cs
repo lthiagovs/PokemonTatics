@@ -21,22 +21,35 @@ public static class GameMap
         // Top row
         for (int x = 0; x < tileNumber; x++)
         {
-            Color tileColor = (x == 0 || x == tileNumber - 1) ? Color.Aquamarine : Color.Azure;
             var element = new GameInterfaceElement(
                 (short)(x * mapTileSize), 0,
                 (short)mapTileSize, (short)mapTileSize, true);
-            element.SetRendererConfig(tileColor);
+            if(x == 0)
+                element.SetRendererConfig(Color.White, null, "Environment/top_left_corner");
+
+            else if(x == tileNumber - 1)
+                element.SetRendererConfig(Color.White, null, "Environment/top_right_corner");
+
+            else
+                element.SetRendererConfig(Color.White, null, "Environment/top_border");
+
             MAP_ELEMENTS.Add(element);
         }
 
         // Bottom row
         for (int x = 0; x < tileNumber; x++)
         {
-            Color tileColor = (x == 0 || x == tileNumber - 1) ? Color.Aquamarine : Color.Azure;
             var element = new GameInterfaceElement(
                 (short)(x * mapTileSize), (short)((yTiles - 1) * mapTileSize),
                 (short)mapTileSize, (short)mapTileSize, true);
-            element.SetRendererConfig(tileColor);
+            if(x == 0)
+                element.SetRendererConfig(Color.White, null, "Environment/bottom_left_corner");
+
+            else if(x == tileNumber - 1)
+                element.SetRendererConfig(Color.White, null, "Environment/bottom_right_corner");
+
+            else
+                element.SetRendererConfig(Color.White, null, "Environment/bottom_border");
             MAP_ELEMENTS.Add(element);
         }
 
@@ -46,7 +59,7 @@ public static class GameMap
             var element = new GameInterfaceElement(
                 0, (short)(y * mapTileSize),
                 (short)mapTileSize, (short)mapTileSize, true);
-            element.SetRendererConfig(Color.Azure);
+            element.SetRendererConfig(Color.White, null, "Environment/left_border");
             MAP_ELEMENTS.Add(element);
         }
 
@@ -56,7 +69,7 @@ public static class GameMap
             var element = new GameInterfaceElement(
                 (short)((tileNumber - 1) * mapTileSize), (short)(y * mapTileSize),
                 (short)mapTileSize, (short)mapTileSize, true);
-            element.SetRendererConfig(Color.Azure);
+            element.SetRendererConfig(Color.White, null, "Environment/right_border");
             MAP_ELEMENTS.Add(element);
         }
     }
