@@ -54,9 +54,6 @@ public class Engine : Game
         GameMouse.SetStateDefault();
         //RESETS
 
-        GameRenderer.Update();
-        GameRenderer.UpdateFromList(GameDeck.GetDeck());
-
         base.Update(gameTime);
     }
 
