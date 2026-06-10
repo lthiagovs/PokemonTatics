@@ -10,11 +10,12 @@ public static class GameRenderer
 {
     
     private static List<GameElement> RenderList = new List<GameElement>();
-
     private static GraphicsDevice GraphicsDevice;
     private static SpriteBatch SpriteBatch;
     private static ContentManager ContentManager;
     private static SpriteFont GAME_FONT;
+    private static Texture2D PIXEL;
+
 
     public static int GetScreenWidth() { return GameRenderer.GraphicsDevice.Viewport.Width; }
 
@@ -28,6 +29,9 @@ public static class GameRenderer
 
         if(GameRenderer.SpriteBatch == null) return false;
         if(GameRenderer.GraphicsDevice == null) return false;
+
+        GameRenderer.PIXEL = new Texture2D(GameRenderer.GraphicsDevice, 1, 1);
+        GameRenderer.PIXEL.SetData(new[] { Color.White });
 
         return true;
     }
@@ -51,10 +55,6 @@ public static class GameRenderer
 
     private static void Draw(GameElement ELEMENT)
     {
-        //MOCK TEXTURE
-        Texture2D pixel = new Texture2D(GameRenderer.GraphicsDevice, 1, 1);
-        pixel.SetData(new[] { ELEMENT.GetRendererConfig().COLOR });
-        //MOCK TEXTURE
 
         //Render Text
         if(ELEMENT.GetRendererConfig().TEXT!=null) { GameRenderer.Write(ELEMENT.GetRendererConfig().TEXT, ELEMENT.GetPosition(), ELEMENT.GetRendererConfig().COLOR); return; }
@@ -62,7 +62,7 @@ public static class GameRenderer
         //Render Texture
         if(ELEMENT.GetRendererConfig().TEXTURE_PATH!=null) { GameRenderer.DrawTexture(ELEMENT); return;}
 
-        GameRenderer.SpriteBatch.Draw(pixel, ELEMENT.GetRectangle(), ELEMENT.GetRendererConfig().COLOR);
+        GameRenderer.SpriteBatch.Draw(PIXEL, ELEMENT.GetRectangle(), ELEMENT.GetRendererConfig().COLOR);
     }
 
     private static void DrawTexture(GameElement ELEMENT)
