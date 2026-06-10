@@ -38,6 +38,7 @@ public class Engine : Game
         GameTable.Initialize();
         GameMap.Initialize();
         GameDeck.Initialize();
+        GameDeck.GetRandomDecks();
 
         //TESTS
 

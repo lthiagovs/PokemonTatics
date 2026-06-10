@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using ENGINE.MODELS;
 using GAME.CORE;
 using GAME.UI;
 using Microsoft.Xna.Framework;
@@ -7,6 +9,8 @@ public static class GameDeck
 {
     private static List<GameElement> DECK_ELEMENTS = new List<GameElement>();
     public static List<GameElement> GetDeck() { return GameDeck.DECK_ELEMENTS; }
+    public static List<Pokemon> PokemonDecks = new List<Pokemon>();
+
     private static int DECK_SIZE = 7;
 
     public static void Initialize()
@@ -23,6 +27,7 @@ public static class GameDeck
         deckBackground.SetRendererConfig(Color.Gray);
         DECK_ELEMENTS.Add(deckBackground);
 
+        //CARDS
         int cardGap  = tileSize / 4;                          
         int cardH    = (int)(bgH * 0.80);                     
         int cardW    = (int)(cardH * 0.65);                   
@@ -39,7 +44,14 @@ public static class GameDeck
                 true, deckBackground);
             card.SetRendererConfig(Color.White);
             card.MOUSE_HOVER = true;
+
+            //CARD INFOS
+            GameInterfaceElement cardName = new GameInterfaceElement(0, 0, 0, 0, true, card);
+            cardName.SetRendererConfig(Color.Black, PokemonDatabase.PokemonList[i].NAME);
+            //CARD INFOS
+
             DECK_ELEMENTS.Add(card);
+            DECK_ELEMENTS.Add(cardName);
         }
 
         int textH = cardH / 2;
@@ -50,15 +62,29 @@ public static class GameDeck
             (short)textX, (short)cardY,
             (short)textW, (short)textH,
             true, deckBackground);
-        text1.SetRendererConfig(Color.Black, "STATS 1: X");
+        text1.SetRendererConfig(Color.Black, "HEALTH 1: X");
 
         GameInterfaceElement text2 = new GameInterfaceElement(
             (short)textX, (short)(cardY + textH),
             (short)textW, (short)textH,
             true, deckBackground);
-        text2.SetRendererConfig(Color.Black, "STATS 2: X");
+        text2.SetRendererConfig(Color.Black, "GOLD 2: X");
 
         DECK_ELEMENTS.Add(text1);
         DECK_ELEMENTS.Add(text2);
     }
+
+    public static void GetRandomDecks()
+    {
+        Random _random = new Random();
+        GameDeck.PokemonDecks.Clear();
+
+        for(int i = 0;i < DECK_SIZE; i++)
+        {
+            int index = _random.Next(0, PokemonDatabase.PokemonList.Count-1);
+            PokemonDecks.Add(PokemonDatabase.PokemonList[index]);
+
+        }
+    }
+
 }
