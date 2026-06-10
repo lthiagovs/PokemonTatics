@@ -33,7 +33,7 @@ public class Engine : Game
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
 
-        GameRenderer.InitializeRenderer(_spriteBatch, GraphicsDevice);
+        GameRenderer.InitializeRenderer(_spriteBatch, GraphicsDevice, Content);
         GameRenderer.SetFont(Content.Load<SpriteFont>("Fonts/GameFont"));
         GameTable.Initialize();
         GameMap.Initialize();
