@@ -15,6 +15,11 @@ public class GameInterfaceElement : GameElement
     : base(POS_X, POS_Y, SIZE_X, SIZE_Y, VISIBLE)
     {
         this.COLOR_STATE = this.GetRendererConfig().COLOR;
+
+        //DEFAULT CONFIGS
+        this.RENDER_CONFIG = new GameRendererConfig(Color.White, null, null, Rectangle.Empty, false);
+        this.CONFIG = new GameInterfaceConfig(false, false);
+
         this.PARENT = PARENT;
         if (PARENT != null) { this.SetPosition(new Point(POS_X, POS_Y)); }
     }
@@ -50,7 +55,7 @@ public class GameInterfaceElement : GameElement
         if(this.GetRectangle().Intersects(GameMouse.GetRectangle())) {
             
             // HOVER
-            if(this.CONFIG.IsHover()){this.RENDER_CONFIG.COLOR = Color.Black; GameMouse.SetStateHover();}
+            if(this.CONFIG.IsHover()){this.RENDER_CONFIG.COLOR = Color.Black; }
 
             //DRAG
             if(this.CONFIG.IsDraggable() && GameMouse.LeftPressed()) this.Move(GameMouse.GetPos());
