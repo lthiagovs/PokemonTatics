@@ -8,6 +8,9 @@ public static class GameMouse{
 
     private static short CURSOR_SIZE = 1;
 
+    private static GameElement CARRY_ELEMENT = null;
+
+    #region HELPERS
     private static MouseState GetState() { return Mouse.GetState(); }
 
     public static Point GetPos()
@@ -22,6 +25,12 @@ public static class GameMouse{
         return new Rectangle(_state.X, _state.Y, CURSOR_SIZE, CURSOR_SIZE);
     }
 
+    public static void SetCarryElement(GameElement ELEMENT) { GameMouse.CARRY_ELEMENT = ELEMENT; }
+    public static void ClearCarryElement() { GameMouse.CARRY_ELEMENT = null; } 
+    public static GameElement GetCarryElement() { return GameMouse.CARRY_ELEMENT; }
+    #endregion
+
+    #region STATES
     public static void SetStateHover()
     {
         Mouse.SetCursor(MouseCursor.Hand);
@@ -31,11 +40,14 @@ public static class GameMouse{
     {
         Mouse.SetCursor(MouseCursor.Arrow);
     }
+    #endregion
 
+    #region INPUTS
     public static bool LeftPressed()
     {
         MouseState _state = GameMouse.GetState();
         return _state.LeftButton == ButtonState.Pressed;
     }
+    #endregion
     
 }
