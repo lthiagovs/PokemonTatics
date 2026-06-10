@@ -37,8 +37,8 @@ public class Engine : Game
         GameRenderer.SetFont(Content.Load<SpriteFont>("Fonts/GameFont"));
         GameTable.Initialize();
         GameMap.Initialize();
-        GameDeck.Initialize();
         GameDeck.GetRandomDecks();
+        GameDeck.Initialize();
 
         //TESTS
 
