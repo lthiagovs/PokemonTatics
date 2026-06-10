@@ -60,6 +60,11 @@ public class GameTableElement : GameInterfaceElement
                 this.POKEMON_ENTITY.SetEntityConfig(cfg);
                 GameTableElement.TABLE_ELEMENTS.Add(this.POKEMON_ENTITY);
                 Console.WriteLine("PLACED");
+            } else if (GameMouse.LeftPressed() && !GameMouse.IsCarryElement() && this.POKEMON_ENTITY!=null && PLAYER_OWN)
+            {
+                GameMouse.SetCarryElement(PokemonEntity.Copy(this.POKEMON_ENTITY));
+                TABLE_ELEMENTS.Remove(this.POKEMON_ENTITY);
+                this.POKEMON_ENTITY = null;
             }
 
         }
