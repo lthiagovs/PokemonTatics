@@ -27,10 +27,10 @@ public class GameInterfaceElement : GameElement
         return this.GetPosition();
     }
 
-    public override void SetRendererConfig(Color COLOR, String TEXT = null)
+    public override void SetRendererConfig(Color COLOR, String TEXT = null, String TEXTURE_PATH = null)
     {
         this.COLOR_STATE = COLOR;
-        base.SetRendererConfig(COLOR, TEXT);
+        base.SetRendererConfig(COLOR, TEXT, TEXTURE_PATH);
     }
 
     public override Point SetPosition(Point NEW_POSITION)

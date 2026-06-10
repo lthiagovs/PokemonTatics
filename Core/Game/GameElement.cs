@@ -73,7 +73,11 @@ public class GameElement
     #region RENDER & LOGIC
     public virtual GameRendererConfig GetRendererConfig() { return this.RENDER_CONFIG; }
 
-    public virtual void SetRendererConfig(Color COLOR, String TEXT = null) { this.RENDER_CONFIG.COLOR = COLOR; this.RENDER_CONFIG.TEXT = TEXT; }
+    public virtual void SetRendererConfig(Color COLOR, String TEXT = null, String TEXTURE_PATH = null) { 
+        this.RENDER_CONFIG.COLOR = COLOR; 
+        this.RENDER_CONFIG.TEXT = TEXT; 
+        this.RENDER_CONFIG.TEXTURE_PATH = TEXTURE_PATH;
+    }
 
     public virtual void Update() {}
     #endregion

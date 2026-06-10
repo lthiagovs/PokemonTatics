@@ -7,6 +7,7 @@ public class GameRendererConfig
 {
     public Color COLOR;
     public String TEXT;
+    public String TEXTURE_PATH;
 
     public GameRendererConfig(Color COLOR)
     {
