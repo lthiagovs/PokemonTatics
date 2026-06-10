@@ -53,6 +53,7 @@ public class Engine : Game
 
         //RESETS
         GameMouse.SetStateDefault();
+        GameRenderer.UpdateFromList(GameTable.GetTable());
         //RESETS
 
         base.Update(gameTime);
