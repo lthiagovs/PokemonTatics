@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Runtime.Serialization.Formatters;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -14,6 +15,9 @@ public static class GameRenderer
     private static ContentManager ContentManager;
     private static SpriteFont GAME_FONT;
     private static Texture2D PIXEL;
+
+    //ENTITY
+    public static List<GameElement> ENTITIES = new List<GameElement>();
 
     //CACHE
     private static Dictionary<string, Texture2D> _textureCache = new();
@@ -60,11 +64,15 @@ public static class GameRenderer
 
     private static void Draw(GameElement ELEMENT)
     {
+
+        if(ELEMENT is GameEntity) { GameRenderer.DrawEntity(ELEMENT as GameEntity); return; }
+
         if (ELEMENT.GetRendererConfig().TEXT != null)
         {
             GameRenderer.Write(ELEMENT.GetRendererConfig().TEXT, ELEMENT.GetPosition(), ELEMENT.GetRendererConfig().COLOR);
             return;
         }
+
         if (ELEMENT.GetRendererConfig().TEXTURE_PATH != null)
         {
             if (ELEMENT.GetRendererConfig().IS_SLICE)
@@ -73,6 +81,7 @@ public static class GameRenderer
                 GameRenderer.DrawTexture(ELEMENT);
             return;
         }
+
         GameRenderer.SpriteBatch.Draw(PIXEL, ELEMENT.GetRectangle(), ELEMENT.GetRendererConfig().COLOR);
     }
 
@@ -130,8 +139,48 @@ public static class GameRenderer
             SpriteBatch.Draw(texture, dst[i], src[i], cfg.COLOR);
     }
 
+    private static void DrawEntity(GameEntity ENTITY)
+    {
+        var cfg    = ENTITY.GetEntityConfig();
+        int s      = cfg.SLICE_SIZE;
+        int frame  = ENTITY.IS_MOVING ? ENTITY.GetFrame() : 0;
+        bool flip  = false;
+
+        int row;
+        switch (ENTITY.DIRECTION)
+        {
+            case GameDirection.BOTTOM:       row = 0; break;
+            case GameDirection.TOP:          row = 1; break;
+            case GameDirection.LEFT:         row = 2; break;
+            case GameDirection.RIGHT:        row = 2; flip = true; break;
+            case GameDirection.TOP_LEFT:     row = 3; break;
+            case GameDirection.TOP_RIGHT:    row = 3; flip = true; break;
+            case GameDirection.BOTTOM_LEFT:  row = 4; break;
+            case GameDirection.BOTTOM_RIGHT: row = 4; flip = true; break;
+            default:                         row = 0; break;
+        }
+
+        int[] frameOrder = { 1, 0, 2 };
+        int col = frameOrder[frame % 3];
+
+        Rectangle src  = new Rectangle(col * s, row * s, s, s);
+        Rectangle dest = new Rectangle(
+            ENTITY.GetRectangle().X,
+            ENTITY.GetRectangle().Y,
+            s * cfg.SIZE,
+            s * cfg.SIZE
+        );
+
+        Texture2D texture = LoadTexture(cfg.TEXTURE_PATH);
+
+        SpriteEffects effect = flip ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
+
+        SpriteBatch.Draw(texture, dest, src, Color.White, 0f, Vector2.Zero, effect, 0f);
+    }
+
     public static void Render(GameElement ELEMENT)
     {
+        if(ELEMENT==null) return;
         GameRenderer.SpriteBatch.Begin(samplerState: SamplerState.PointClamp);
 
         if(ELEMENT.VISIBLE) GameRenderer.Draw(ELEMENT);
