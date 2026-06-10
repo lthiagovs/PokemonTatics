@@ -36,7 +36,7 @@ public static class GameTable
 
                 element.MOUSE_HOVER = true;
 
-                element.SetRendererConfig(Color.Blue);
+                element.SetRendererConfig(Color.White, null, "Environment/tile");
                 TABLE_ELEMENTS.Add(element);
             }
         }
