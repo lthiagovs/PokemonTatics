@@ -8,72 +8,126 @@ namespace GAME.CORE;
 
 public static class GameRenderer
 {
-    
-    private static List<GameElement> RenderList = new List<GameElement>();
+
     private static GraphicsDevice GraphicsDevice;
     private static SpriteBatch SpriteBatch;
     private static ContentManager ContentManager;
     private static SpriteFont GAME_FONT;
     private static Texture2D PIXEL;
 
+    //CACHE
+    private static Dictionary<string, Texture2D> _textureCache = new();
+
+    #region HELPERS
+    public static bool InitializeRenderer(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, ContentManager contentManager)
+        {
+            GameRenderer.SpriteBatch = spriteBatch;
+            GameRenderer.GraphicsDevice = graphicsDevice;
+            GameRenderer.ContentManager = contentManager;
+
+            if(GameRenderer.SpriteBatch == null) return false;
+            if(GameRenderer.GraphicsDevice == null) return false;
+
+            GameRenderer.PIXEL = new Texture2D(GameRenderer.GraphicsDevice, 1, 1);
+            GameRenderer.PIXEL.SetData(new[] { Color.White });
+
+            return true;
+        }
 
     public static int GetScreenWidth() { return GameRenderer.GraphicsDevice.Viewport.Width; }
 
     public static int GetScreenHeight() { return GameRenderer.GraphicsDevice.Viewport.Height; }
 
-    public static bool InitializeRenderer(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, ContentManager contentManager)
-    {
-        GameRenderer.SpriteBatch = spriteBatch;
-        GameRenderer.GraphicsDevice = graphicsDevice;
-        GameRenderer.ContentManager = contentManager;
-
-        if(GameRenderer.SpriteBatch == null) return false;
-        if(GameRenderer.GraphicsDevice == null) return false;
-
-        GameRenderer.PIXEL = new Texture2D(GameRenderer.GraphicsDevice, 1, 1);
-        GameRenderer.PIXEL.SetData(new[] { Color.White });
-
-        return true;
-    }
-
     public static void SetFont(SpriteFont FONT) { GameRenderer.GAME_FONT = FONT; }
 
+    private static Texture2D LoadTexture(string path)
+    {
+        if (!_textureCache.TryGetValue(path, out Texture2D texture))
+        {
+            texture = GameRenderer.ContentManager.Load<Texture2D>(path);
+            _textureCache[path] = texture;
+        }
+        return texture;
+    }
+
+    #endregion
+
+    #region DRAW
     private static void Write(string TEXT, Point POSITION, Color COLOR)
     {
        GameRenderer.SpriteBatch.DrawString(GameRenderer.GAME_FONT, TEXT, new Vector2(POSITION.X, POSITION.Y), COLOR);
     }
 
-    public static void AddElement(GameElement ELEMENT)
-    {
-        GameRenderer.RenderList.Add(ELEMENT);
-    }
-
-    public static GameElement GetElementByIndex(int INDEX)
-    {
-        return GameRenderer.RenderList[INDEX];
-    }
-
     private static void Draw(GameElement ELEMENT)
     {
-
-        //Render Text
-        if(ELEMENT.GetRendererConfig().TEXT!=null) { GameRenderer.Write(ELEMENT.GetRendererConfig().TEXT, ELEMENT.GetPosition(), ELEMENT.GetRendererConfig().COLOR); return; }
-
-        //Render Texture
-        if(ELEMENT.GetRendererConfig().TEXTURE_PATH!=null) { GameRenderer.DrawTexture(ELEMENT); return;}
-
+        if (ELEMENT.GetRendererConfig().TEXT != null)
+        {
+            GameRenderer.Write(ELEMENT.GetRendererConfig().TEXT, ELEMENT.GetPosition(), ELEMENT.GetRendererConfig().COLOR);
+            return;
+        }
+        if (ELEMENT.GetRendererConfig().TEXTURE_PATH != null)
+        {
+            if (ELEMENT.GetRendererConfig().IS_SLICE)
+                GameRenderer.DrawNineSlice(ELEMENT);
+            else
+                GameRenderer.DrawTexture(ELEMENT);
+            return;
+        }
         GameRenderer.SpriteBatch.Draw(PIXEL, ELEMENT.GetRectangle(), ELEMENT.GetRendererConfig().COLOR);
     }
 
     private static void DrawTexture(GameElement ELEMENT)
     {
-        Texture2D texture = GameRenderer.ContentManager.Load<Texture2D>(ELEMENT.GetRendererConfig().TEXTURE_PATH);
+        Texture2D texture = LoadTexture(ELEMENT.GetRendererConfig().TEXTURE_PATH);
         SpriteBatch.Draw(
             texture,
             ELEMENT.GetRectangle(),
             ELEMENT.GetRendererConfig().RECTANGLE,
             ELEMENT.GetRendererConfig().COLOR
         );
+    }
+
+    private static void DrawNineSlice(GameElement ELEMENT)
+    {
+        var cfg     = ELEMENT.GetRendererConfig();
+        var dest    = ELEMENT.GetRectangle();
+        int s       = cfg.SLICE_SIZE;
+        int p       = s * cfg.SLICE_PROPORTION;
+        Texture2D texture = LoadTexture(cfg.TEXTURE_PATH);
+
+        Rectangle[] src = new Rectangle[9]
+        {
+            new(0,     0, s, s),
+            new(s,     0, s, s),
+            new(s * 2, 0, s, s),
+            new(0,     s, s, s),
+            new(s,     s, s, s),
+            new(s * 2, s, s, s),
+            new(0,     s * 2, s, s),
+            new(s,     s * 2, s, s),
+            new(s * 2, s * 2, s, s),
+        };
+
+        int iW = dest.Width  - p * 2;
+        int iH = dest.Height - p * 2;
+        int r  = dest.X + dest.Width  - p;
+        int b  = dest.Y + dest.Height - p;
+
+        Rectangle[] dst = new Rectangle[9]
+        {
+            new(dest.X,     dest.Y,     p,  p),
+            new(dest.X + p, dest.Y,     iW, p),
+            new(r,          dest.Y,     p,  p),
+            new(dest.X,     dest.Y + p, p,  iH),
+            new(dest.X + p, dest.Y + p, iW, iH),
+            new(r,          dest.Y + p, p,  iH),
+            new(dest.X,     b,          p,  p),
+            new(dest.X + p, b,          iW, p),
+            new(r,          b,          p,  p),
+        };
+
+        for (int i = 0; i < 9; i++)
+            SpriteBatch.Draw(texture, dst[i], src[i], cfg.COLOR);
     }
 
     public static void Render(GameElement ELEMENT)
@@ -85,36 +139,19 @@ public static class GameRenderer
         GameRenderer.SpriteBatch.End();
     }
 
-    public static void Render()
+    public static void Render(List<GameElement> CUSTOM_LIST)
     {
 
         GameRenderer.SpriteBatch.Begin(samplerState: SamplerState.PointClamp);
 
-        foreach(GameElement element in GameRenderer.RenderList)
-        {
-
-            if(element.VISIBLE) GameRenderer.Draw(element);
-        }
+        foreach(GameElement element in CUSTOM_LIST) if(element.VISIBLE) GameRenderer.Draw(element);
 
         GameRenderer.SpriteBatch.End();
     }
+    #endregion
 
-    public static void RenderFromList(List<GameElement> CUSTOM_LIST)
-    {
-
-        GameRenderer.SpriteBatch.Begin(samplerState: SamplerState.PointClamp);
-
-        foreach(GameElement element in CUSTOM_LIST)
-        {
-
-            if(element.VISIBLE) GameRenderer.Draw(element);
-        }
-
-        GameRenderer.SpriteBatch.End();
-    }
-
-    public static void Update() { foreach(GameElement element in GameRenderer.RenderList) element.Update(); }
-
-    public static void UpdateFromList(List<GameElement> CUSTOM_LIST) { foreach(GameElement element in CUSTOM_LIST) element.Update(); }
+    #region LOGIC
+    public static void Update(List<GameElement> CUSTOM_LIST) { foreach(GameElement element in CUSTOM_LIST) element.Update(); }
+    #endregion
 
 }

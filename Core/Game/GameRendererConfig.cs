@@ -5,21 +5,24 @@ namespace GAME.CORE;
 
 public class GameRendererConfig
 {
-    public Color COLOR;
-    public String TEXT;
-    public String TEXTURE_PATH;
-    public Rectangle RECTANGLE;
+    public Color COLOR = Color.White;
+    public String TEXT = null;
+    public String TEXTURE_PATH = null;
+    public Rectangle? RECTANGLE = null;
+    public bool IS_SLICE = false;
+    public int SLICE_SIZE = 0;
+    public int SLICE_PROPORTION = 1;
 
-    public GameRendererConfig(Color COLOR)
+    //ALLOW DEFAULT CONFIG
+    public GameRendererConfig() { }
+    
+    public GameRendererConfig(Color COLOR, String TEXT, String TEXTURE_PATH, Rectangle RECTANGLE, bool IS_SLICE)
     {
         this.COLOR = COLOR;
-    }
-
-
-    //DEFAULT CONFIG
-    public GameRendererConfig()
-    {
-        this.COLOR = Color.White;
+        this.TEXT = TEXT;
+        this.TEXTURE_PATH = TEXTURE_PATH;
+        this.RECTANGLE = RECTANGLE;
+        this.IS_SLICE = IS_SLICE;
     }
 
 }
