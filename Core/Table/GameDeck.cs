@@ -5,51 +5,60 @@ using Microsoft.Xna.Framework;
 
 public static class GameDeck
 {
-    
     private static List<GameElement> DECK_ELEMENTS = new List<GameElement>();
-
     public static List<GameElement> GetDeck() { return GameDeck.DECK_ELEMENTS; }
-
     private static int DECK_SIZE = 7;
 
     public static void Initialize()
     {
-        
-        int screenWidth = GameRenderer.GetScreenWidth();
+        int screenWidth  = GameRenderer.GetScreenWidth();
         int screenHeight = GameRenderer.GetScreenHeight();
 
-        //BACKGROUND
-        short sizeX = (short) (screenWidth/1.5);
-        short sizeY = (short) (screenHeight/6);
-
-        short posX = (short) ((screenWidth/2) - (sizeX/2));
-        short posY = (short) (screenHeight - (sizeY*1.5));
-
-        GameInterfaceElement deckBackground = new GameInterfaceElement(posX, posY, sizeX, sizeY, true);
+        int tileSize = screenWidth / 20;
+        short bgW    = (short)(screenWidth - tileSize * 2);   
+        short bgH    = (short)(tileSize * 2);                 
+        short bgX    = (short)tileSize;                       
+        short bgY    = (short)(screenHeight - bgH);
+        GameInterfaceElement deckBackground = new GameInterfaceElement(bgX, bgY, bgW, bgH, true);
         deckBackground.SetRendererConfig(Color.Gray);
-
         DECK_ELEMENTS.Add(deckBackground);
 
-        //DECKS
-        for(int i = 0; i < GameDeck.DECK_SIZE; i++){
-            GameInterfaceElement decks = new GameInterfaceElement((short) (i*sizeX*0.15), (short)(sizeY * 0.1), (short) (sizeX*0.10), (short) (sizeY-(sizeY*0.2)), true, deckBackground);
-            decks.SetRendererConfig(Color.White);
-            decks.MOUSE_HOVER = true;
+        int cardGap  = tileSize / 4;                          
+        int cardH    = (int)(bgH * 0.80);                     
+        int cardW    = (int)(cardH * 0.65);                   
+        int totalW   = (DECK_SIZE * cardW) + ((DECK_SIZE - 1) * cardGap);
+        int startX   = (bgW - totalW) / 2;                    
+        int cardY    = (bgH - cardH) / 2;                    
 
-            DECK_ELEMENTS.Add(decks);
+        for (int i = 0; i < DECK_SIZE; i++)
+        {
+            int cardX = startX + i * (cardW + cardGap);
+            GameInterfaceElement card = new GameInterfaceElement(
+                (short)cardX, (short)cardY,
+                (short)cardW, (short)cardH,
+                true, deckBackground);
+            card.SetRendererConfig(Color.White);
+            card.MOUSE_HOVER = true;
+            DECK_ELEMENTS.Add(card);
         }
 
-        //TEXT
-        GameInterfaceElement text1 = new GameInterfaceElement((short) 0, 0, (short) (sizeX*0.10), (short) (sizeY-(sizeY*0.2)), true, deckBackground);
-            text1.SetRendererConfig(Color.Black, "STATS 1: X");
+        int textH = cardH / 2;
+        int textW = tileSize * 3;
+        int textX = bgW - textW - cardGap;
+        
+        GameInterfaceElement text1 = new GameInterfaceElement(
+            (short)textX, (short)cardY,
+            (short)textW, (short)textH,
+            true, deckBackground);
+        text1.SetRendererConfig(Color.Black, "STATS 1: X");
 
-        GameInterfaceElement text2 = new GameInterfaceElement((short) 100, 0, (short) (sizeX*0.10), (short) (sizeY-(sizeY*0.2)), true, deckBackground);
-            text2.SetRendererConfig(Color.Black, "STATS 2: X");
+        GameInterfaceElement text2 = new GameInterfaceElement(
+            (short)textX, (short)(cardY + textH),
+            (short)textW, (short)textH,
+            true, deckBackground);
+        text2.SetRendererConfig(Color.Black, "STATS 2: X");
 
         DECK_ELEMENTS.Add(text1);
         DECK_ELEMENTS.Add(text2);
-
-
     }
-
 }
