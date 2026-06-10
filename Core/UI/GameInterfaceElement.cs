@@ -9,7 +9,7 @@ public class GameInterfaceElement : GameElement
     public GameInterfaceElement PARENT;
     public GameInterfaceConfig CONFIG;
 
-    private Color COLOR_STATE;
+    protected Color COLOR_STATE;
 
     public GameInterfaceElement(short POS_X, short POS_Y, short SIZE_X, short SIZE_Y, bool VISIBLE, GameInterfaceElement PARENT = null) 
     : base(POS_X, POS_Y, SIZE_X, SIZE_Y, VISIBLE)
