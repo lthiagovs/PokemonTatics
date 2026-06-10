@@ -23,22 +23,21 @@ public static class GameTable
         int yTiles     = GameRenderer.GetScreenHeight() / tileSize;
         TABLE_SIZE_X = totalTiles - 2;
         TABLE_SIZE_Y = yTiles - 2;
-
         for (int y = 0; y < TABLE_SIZE_Y; y++)
         {
             for (int x = 0; x < TABLE_SIZE_X; x++)
             {
                 int posX = tileSize + (tileSize * x);
                 int posY = tileSize + (tileSize * y);
-                var element = new GameInterfaceElement(
+                var element = new GameTableElement(
                     (short)posX, (short)posY,
                     (short)tileSize, (short)tileSize, true);
                 
                 element.CONFIG = new GameInterfaceConfig(true, false);
+                element.PLAYER_OWN = (y >= 3 && y <= 6);
                 GameRendererConfig eConfig = new GameRendererConfig();
                 eConfig.RECTANGLE = TS_TILE;
                 eConfig.TEXTURE_PATH = "Environment/tileset";
-
                 element.SetRendererConfig(eConfig);
                 TABLE_ELEMENTS.Add(element);
             }
