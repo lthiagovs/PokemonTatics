@@ -1,4 +1,6 @@
 
+using System.Runtime.CompilerServices;
+using System.Runtime.Serialization.Formatters;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
@@ -28,6 +30,7 @@ public static class GameMouse{
     public static void SetCarryElement(GameElement ELEMENT) { GameMouse.CARRY_ELEMENT = ELEMENT; }
     public static void ClearCarryElement() { GameMouse.CARRY_ELEMENT = null; } 
     public static GameElement GetCarryElement() { return GameMouse.CARRY_ELEMENT; }
+    public static bool IsCarryElement() { return GameMouse.CARRY_ELEMENT != null; }
     #endregion
 
     #region STATES
@@ -40,6 +43,14 @@ public static class GameMouse{
     {
         Mouse.SetCursor(MouseCursor.Arrow);
     }
+
+    public static void Update()
+    {
+        if(GameMouse.CARRY_ELEMENT!=null) CARRY_ELEMENT.SetPosition(GameMouse.GetPos());
+
+        if(GameMouse.RightPressed()) GameMouse.ClearCarryElement();
+
+    }
     #endregion
 
     #region INPUTS
@@ -47,6 +58,12 @@ public static class GameMouse{
     {
         MouseState _state = GameMouse.GetState();
         return _state.LeftButton == ButtonState.Pressed;
+    }
+
+    public static bool RightPressed()
+    {
+        MouseState _state = GameMouse.GetState();
+        return _state.RightButton == ButtonState.Pressed;
     }
     #endregion
     
