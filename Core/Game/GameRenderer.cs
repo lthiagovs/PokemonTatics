@@ -68,7 +68,12 @@ public static class GameRenderer
     private static void DrawTexture(GameElement ELEMENT)
     {
         Texture2D texture = GameRenderer.ContentManager.Load<Texture2D>(ELEMENT.GetRendererConfig().TEXTURE_PATH);
-        SpriteBatch.Draw(texture, ELEMENT.GetRectangle(), ELEMENT.GetRendererConfig().COLOR);
+        SpriteBatch.Draw(
+            texture,
+            ELEMENT.GetRectangle(),
+            ELEMENT.GetRendererConfig().RECTANGLE,
+            ELEMENT.GetRendererConfig().COLOR
+        );
     }
 
     public static void Render(GameElement ELEMENT)

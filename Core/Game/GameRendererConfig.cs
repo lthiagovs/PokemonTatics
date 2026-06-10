@@ -8,6 +8,7 @@ public class GameRendererConfig
     public Color COLOR;
     public String TEXT;
     public String TEXTURE_PATH;
+    public Rectangle RECTANGLE;
 
     public GameRendererConfig(Color COLOR)
     {
