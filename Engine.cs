@@ -53,7 +53,7 @@ public class Engine : Game
 
         //RESETS
         GameMouse.SetStateDefault();
-        GameRenderer.UpdateFromList(GameTable.GetTable());
+        GameRenderer.Update(GameTable.GetTable());
         //RESETS
 
         base.Update(gameTime);
@@ -63,10 +63,9 @@ public class Engine : Game
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
-        GameRenderer.Render();
-        GameRenderer.RenderFromList(GameMap.GetMap());
-        GameRenderer.RenderFromList(GameTable.GetTable());
-        GameRenderer.RenderFromList(GameDeck.GetDeck());
+        GameRenderer.Render(GameMap.GetMap());
+        GameRenderer.Render(GameTable.GetTable());
+        GameRenderer.Render(GameDeck.GetDeck());
 
         base.Draw(gameTime);
     }

@@ -1,7 +1,9 @@
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using GAME.CORE;
 using GAME.UI;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Content;
 namespace GAME.TABLE;
 
 public static class GameTable
@@ -31,8 +33,13 @@ public static class GameTable
                 var element = new GameInterfaceElement(
                     (short)posX, (short)posY,
                     (short)tileSize, (short)tileSize, true);
-                element.MOUSE_HOVER = true;
-                element.SetRendererConfig(Color.White, TS_TILE, null, "Environment/tileset");
+                
+                element.CONFIG = new GameInterfaceConfig(true, false);
+                GameRendererConfig eConfig = new GameRendererConfig();
+                eConfig.RECTANGLE = TS_TILE;
+                eConfig.TEXTURE_PATH = "Environment/tileset";
+
+                element.SetRendererConfig(eConfig);
                 TABLE_ELEMENTS.Add(element);
             }
         }

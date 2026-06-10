@@ -19,6 +19,11 @@ public static class GameMap
 
     public static List<GameElement> GetMap() { return GameMap.MAP_ELEMENTS; }
 
+    private static GameRendererConfig GetTileRendererConfig(Rectangle RECTANGLE)
+    {
+        return new GameRendererConfig(Color.White, null, "Environment/tileset", RECTANGLE, false);
+    }
+
     public static void Initialize()
     {
         int tileNumber  = 20;
@@ -31,9 +36,9 @@ public static class GameMap
             var element = new GameInterfaceElement(
                 (short)(x * mapTileSize), 0,
                 (short)mapTileSize, (short)mapTileSize, true);
-            if      (x == 0)            element.SetRendererConfig(Color.White, TS_TOP_LEFT,  null, "Environment/tileset");
-            else if (x == tileNumber-1) element.SetRendererConfig(Color.White, TS_TOP_RIGHT, null, "Environment/tileset");
-            else                        element.SetRendererConfig(Color.White, TS_TOP_BORDER,null, "Environment/tileset");
+            if      (x == 0)            element.SetRendererConfig(GameMap.GetTileRendererConfig(TS_TOP_LEFT));
+            else if (x == tileNumber-1) element.SetRendererConfig(GameMap.GetTileRendererConfig(TS_TOP_RIGHT));
+            else                        element.SetRendererConfig(GameMap.GetTileRendererConfig(TS_TOP_BORDER));
             MAP_ELEMENTS.Add(element);
         }
         // Bottom row
@@ -42,9 +47,9 @@ public static class GameMap
             var element = new GameInterfaceElement(
                 (short)(x * mapTileSize), (short)((yTiles - 1) * mapTileSize),
                 (short)mapTileSize, (short)mapTileSize, true);
-            if      (x == 0)            element.SetRendererConfig(Color.White, TS_BOTTOM_LEFT,  null, "Environment/tileset");
-            else if (x == tileNumber-1) element.SetRendererConfig(Color.White, TS_BOTTOM_RIGHT, null, "Environment/tileset");
-            else                        element.SetRendererConfig(Color.White, TS_BOTTOM,        null, "Environment/tileset");
+            if      (x == 0)            element.SetRendererConfig(GameMap.GetTileRendererConfig(TS_BOTTOM_LEFT));
+            else if (x == tileNumber-1) element.SetRendererConfig(GameMap.GetTileRendererConfig(TS_BOTTOM_RIGHT));
+            else                        element.SetRendererConfig(GameMap.GetTileRendererConfig(TS_BOTTOM));
             MAP_ELEMENTS.Add(element);
         }
         // Left column
@@ -53,7 +58,7 @@ public static class GameMap
             var element = new GameInterfaceElement(
                 0, (short)(y * mapTileSize),
                 (short)mapTileSize, (short)mapTileSize, true);
-            element.SetRendererConfig(Color.White, TS_LEFT, null, "Environment/tileset");
+            element.SetRendererConfig(GameMap.GetTileRendererConfig(TS_LEFT));
             MAP_ELEMENTS.Add(element);
         }
         // Right column
@@ -62,7 +67,7 @@ public static class GameMap
             var element = new GameInterfaceElement(
                 (short)((tileNumber - 1) * mapTileSize), (short)(y * mapTileSize),
                 (short)mapTileSize, (short)mapTileSize, true);
-            element.SetRendererConfig(Color.White, TS_RIGHT, null, "Environment/tileset");
+            element.SetRendererConfig(GameMap.GetTileRendererConfig(TS_RIGHT));
             MAP_ELEMENTS.Add(element);
         }
     }

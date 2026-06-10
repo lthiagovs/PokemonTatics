@@ -6,18 +6,16 @@ namespace GAME.UI;
 
 public class GameInterfaceElement : GameElement
 {
-    public bool MOUSE_HOVER = false;
-    public bool DRAGGABLE = false;
+    public GameInterfaceElement PARENT;
+    public GameInterfaceConfig CONFIG;
 
-    public GameInterfaceElement Parent;
-
-    public Color COLOR_STATE;
+    private Color COLOR_STATE;
 
     public GameInterfaceElement(short POS_X, short POS_Y, short SIZE_X, short SIZE_Y, bool VISIBLE, GameInterfaceElement PARENT = null) 
     : base(POS_X, POS_Y, SIZE_X, SIZE_Y, VISIBLE)
     {
         this.COLOR_STATE = this.GetRendererConfig().COLOR;
-        this.Parent = PARENT;
+        this.PARENT = PARENT;
         if (PARENT != null) { this.SetPosition(new Point(POS_X, POS_Y)); }
     }
 
@@ -27,19 +25,19 @@ public class GameInterfaceElement : GameElement
         return this.GetPosition();
     }
 
-    public override void SetRendererConfig(Color COLOR, Rectangle RECTANGLE, String TEXT = null, String TEXTURE_PATH = null)
+    public override void SetRendererConfig(GameRendererConfig CONFIG)
     {
-        this.COLOR_STATE = COLOR;
-        base.SetRendererConfig(COLOR, RECTANGLE, TEXT, TEXTURE_PATH);
+        this.COLOR_STATE = CONFIG.COLOR;
+        base.SetRendererConfig(CONFIG);
     }
 
     public override Point SetPosition(Point NEW_POSITION)
     {
-        if(this.Parent == null) return base.SetPosition(NEW_POSITION);
+        if(this.PARENT == null) return base.SetPosition(NEW_POSITION);
 
         Point new_pos;
-        new_pos.X = this.Parent.GetPosition().X+NEW_POSITION.X;
-        new_pos.Y = this.Parent.GetPosition().Y+NEW_POSITION.Y;
+        new_pos.X = this.PARENT.GetPosition().X+NEW_POSITION.X;
+        new_pos.Y = this.PARENT.GetPosition().Y+NEW_POSITION.Y;
         return base.SetPosition(new_pos);
         
     }
@@ -52,10 +50,10 @@ public class GameInterfaceElement : GameElement
         if(this.GetRectangle().Intersects(GameMouse.GetRectangle())) {
             
             // HOVER
-            if(this.MOUSE_HOVER){this.RENDER_CONFIG.COLOR = Color.Black; GameMouse.SetStateHover();}
+            if(this.CONFIG.IsHover()){this.RENDER_CONFIG.COLOR = Color.Black; GameMouse.SetStateHover();}
 
             //DRAG
-            if(this.DRAGGABLE && GameMouse.LeftPressed()) this.Move(GameMouse.GetPos());
+            if(this.CONFIG.IsDraggable() && GameMouse.LeftPressed()) this.Move(GameMouse.GetPos());
 
         }
 
