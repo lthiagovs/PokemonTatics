@@ -78,7 +78,7 @@ public static class GameRenderer
 
     public static void Render(GameElement ELEMENT)
     {
-        GameRenderer.SpriteBatch.Begin();
+        GameRenderer.SpriteBatch.Begin(samplerState: SamplerState.PointClamp);
 
         if(ELEMENT.VISIBLE) GameRenderer.Draw(ELEMENT);
 
@@ -88,7 +88,7 @@ public static class GameRenderer
     public static void Render()
     {
 
-        GameRenderer.SpriteBatch.Begin();
+        GameRenderer.SpriteBatch.Begin(samplerState: SamplerState.PointClamp);
 
         foreach(GameElement element in GameRenderer.RenderList)
         {
@@ -102,7 +102,7 @@ public static class GameRenderer
     public static void RenderFromList(List<GameElement> CUSTOM_LIST)
     {
 
-        GameRenderer.SpriteBatch.Begin();
+        GameRenderer.SpriteBatch.Begin(samplerState: SamplerState.PointClamp);
 
         foreach(GameElement element in CUSTOM_LIST)
         {
