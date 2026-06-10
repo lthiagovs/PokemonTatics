@@ -55,6 +55,8 @@ public class Engine : Game
         GameMouse.SetStateDefault();
         GameRenderer.Update(GameTable.GetTable());
         GameRenderer.Update(GameDeck.GetDeck());
+        //GameRenderer.Update(GameTableElement.GetTableElements());
+        GameMouse.Update();
         //RESETS
 
         base.Update(gameTime);
@@ -67,6 +69,8 @@ public class Engine : Game
         GameRenderer.Render(GameMap.GetMap());
         GameRenderer.Render(GameTable.GetTable());
         GameRenderer.Render(GameDeck.GetDeck());
+        GameRenderer.Render(GameTableElement.GetTableElements());
+        GameRenderer.Render(GameMouse.GetCarryElement());
 
         base.Draw(gameTime);
     }
