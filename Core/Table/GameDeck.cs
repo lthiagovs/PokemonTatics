@@ -52,7 +52,7 @@ public static class GameDeck
                 0, (short)nameY,
                 (short)cardW, (short)nameH,
                 true, card);
-            cardName.SetRendererConfig(Color.Black, PokemonDatabase.PokemonList[i].NAME);
+            cardName.SetRendererConfig(Color.Black, PokemonDecks[i].NAME);
 
             DECK_ELEMENTS.Add(card);
             DECK_ELEMENTS.Add(cardName);
