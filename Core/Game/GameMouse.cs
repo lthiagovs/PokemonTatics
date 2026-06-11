@@ -44,26 +44,29 @@ public static class GameMouse{
         Mouse.SetCursor(MouseCursor.Arrow);
     }
 
-    public static void Update()
-    {
-        if(GameMouse.CARRY_ELEMENT!=null) CARRY_ELEMENT.SetPosition(GameMouse.GetPos());
-
-        if(GameMouse.RightPressed()) GameMouse.ClearCarryElement();
-
-    }
     #endregion
 
     #region INPUTS
+
+    private static MouseState _previousState;
+
+    public static void Update()
+    {
+        if(GameMouse.CARRY_ELEMENT != null) CARRY_ELEMENT.SetPosition(GameMouse.GetPos());
+        if(GameMouse.RightPressed()) GameMouse.ClearCarryElement();
+        _previousState = Mouse.GetState();
+    }
+
     public static bool LeftPressed()
     {
         MouseState _state = GameMouse.GetState();
-        return _state.LeftButton == ButtonState.Pressed;
+        return _state.LeftButton == ButtonState.Pressed && _previousState.LeftButton == ButtonState.Released;
     }
 
     public static bool RightPressed()
     {
         MouseState _state = GameMouse.GetState();
-        return _state.RightButton == ButtonState.Pressed;
+        return _state.RightButton == ButtonState.Pressed && _previousState.RightButton == ButtonState.Released;
     }
     #endregion
     

@@ -161,8 +161,8 @@ public static class GameRenderer
             default:                         row = 0; break;
         }
 
-        int[] frameOrder = { 1, 0, 2 };
-        int col = frameOrder[frame % 3];
+        int[] frameOrder = { 1, 2, 1, 2 };
+        int col = frameOrder[frame % 4];
 
         Rectangle src  = new Rectangle(col * s, row * s, s, s);
         Rectangle dest = new Rectangle(

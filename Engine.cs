@@ -52,13 +52,15 @@ public class Engine : Game
         if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
             Exit();
 
-        //RESETS
+        
         GameMouse.SetStateDefault();
         GameRenderer.Update(GameTable.GetTable());
         GameRenderer.Update(GameDeck.GetDeck());
         //GameRenderer.Update(GameTableElement.GetTableElements());
         GameMouse.Update();
-        //RESETS
+        
+        //LOGIC
+        GameTableLogic.Update();
 
         base.Update(gameTime);
     }

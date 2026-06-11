@@ -37,12 +37,12 @@ public static class GameDeck
         GameDeck.BuildManaBar(winBg);
 
         // PLAY BUTTON
-        var playButton = new GameInterfaceElement(
-            (short)bgX, (short)bgY,
+        var playButton = new GameButton(
+            (short)(bgW-40+winBg.GetPosition().X), (short) (-30 + winBg.GetPosition().Y),
             (short) (30*2), (short) (32*2), true);
         playButton.SetRendererConfig(new GameRendererConfig(Color.White, null, "UI/Icons/play_button", new Rectangle(0, 0, 30, 32), false));
-        playButton.PARENT = winBg;
-        playButton.SetPosition(new Point(bgW-40,-30));
+        playButton.CONFIG = new GameInterfaceConfig(true, false);
+        playButton.SetPosition(new Point(bgW-40+winBg.GetPosition().X,-30 + winBg.GetPosition().Y));
         DECK_ELEMENTS.Add(playButton);
 
         int cardGap  = tileSize / 4;
@@ -89,6 +89,21 @@ public static class GameDeck
                 (short)(cardW-30), (short)(cardH-30), true);
             portrait.SetRendererConfig(new GameRendererConfig(Color.White, null, $"Pokemons/{PokemonDecks[i].NAME}/portrait", new Rectangle(0, 0, 40, 40), false));
             GameDeck.DECK_ELEMENTS.Add(portrait);
+
+            var costPlate = new GameInterfaceElement(
+                (short) (cardX+40), (short)(cardY + cardH - 20),
+                (short)(32 * 2), (short)(16 * 2), true);
+            costPlate.SetRendererConfig(new GameRendererConfig(Color.White, null, "UI/Windows/cost_plate", new Rectangle(0, 0, 32, 16), false));
+            costPlate.CONFIG = new GameInterfaceConfig(false, false);
+            GameDeck.DECK_ELEMENTS.Add(costPlate);
+
+            var cardCost = new GameInterfaceElement(
+                (short) (costPlate.GetPosition().X + (costPlate.SIZE_X/2)-4), (short) (costPlate.GetPosition().Y + (costPlate.SIZE_Y/2)-7),
+                (short)nameW, (short)nameH, true);
+            cardCost.SetRendererConfig(new GameRendererConfig(Color.White, PokemonDecks[i].COST.ToString(), null, Rectangle.Empty, false));
+            GameDeck.DECK_ELEMENTS.Add(cardCost);
+
+            GameDeck.BuildPokemonTypeIcon(card);
         }
 
         int iconW       = 20;
@@ -152,6 +167,26 @@ public static class GameDeck
         GameDeck.DECK_ELEMENTS.Add(mana_bar);
         GameDeck.DECK_ELEMENTS.Add(mana_meter);
 
+    }
+
+    public static void BuildPokemonTypeIcon(GameCardElement CARD)
+    {
+        Pokemon _pkmEntity = CARD.GetPokemon();
+
+        int scale = 1;
+        int assetSize = 34;
+        int size = assetSize*scale;
+        String _assetsName = _pkmEntity.TYPE.ToString().ToLower();
+
+        var pkmTypeIcon = new GameInterfaceElement(
+                (short) (0), (short)(0),
+                (short)(size), (short)(size), true);
+            pkmTypeIcon.SetRendererConfig(new GameRendererConfig(Color.White, null, "UI/Types/"+_assetsName, new Rectangle(0, 0, assetSize, assetSize), false));
+            pkmTypeIcon.PARENT = CARD;
+            pkmTypeIcon.SetPosition(new Point(CARD.SIZE_X-size-15,15));
+            pkmTypeIcon.CONFIG = new GameInterfaceConfig(false, false);
+        
+        GameDeck.DECK_ELEMENTS.Add(pkmTypeIcon);
     }
 
     public static void GetRandomDecks()

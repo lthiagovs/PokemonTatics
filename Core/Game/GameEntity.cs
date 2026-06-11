@@ -11,12 +11,32 @@ public class GameEntity : GameElement
     public GameDirection DIRECTION = GameDirection.TOP_RIGHT;
     private GameEntityRenderConfig CONFIG;
     private int FRAME = 0;
+    private int FRAME_TIMER = 0;
+    private int FRAME_SPEED = 10;
     public bool IS_MOVING = false;
 
     public int GetFrame() { return this.FRAME; }
 
     public GameEntityRenderConfig GetEntityConfig() { return this.CONFIG; }
     public void SetEntityConfig(GameEntityRenderConfig CONFIG) {this.CONFIG = CONFIG; }
+
+    public void UpdateAnimation()
+    {
+        if(!IS_MOVING) { FRAME = 0; FRAME_TIMER = 0; return; }
+        
+        FRAME_TIMER++;
+        if(FRAME_TIMER >= FRAME_SPEED)
+        {
+            FRAME_TIMER = 0;
+            FRAME = (FRAME + 1) % 4;
+        }
+    }
+
+    public override void Update()
+    {
+        this.UpdateAnimation();
+    }
+    
 
 }
 

@@ -47,6 +47,15 @@ public class GameInterfaceElement : GameElement
         
     }
 
+    /* public override Rectangle GetRectangle()
+    {
+        if (this.PARENT == null) return base.GetRectangle();
+        return new Rectangle(
+            new Point(this.GetPosition().X + this.PARENT.GetPosition().X, this.GetPosition().Y +this.PARENT.GetPosition().Y),
+            new Point(this.SIZE_X, this.SIZE_Y)
+        );
+    } */
+
     public override void Update()
     {
         this.GetRendererConfig().COLOR = COLOR_STATE;

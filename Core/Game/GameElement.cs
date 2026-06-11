@@ -64,7 +64,7 @@ public class GameElement
         return new Point(this.SIZE_X, this.SIZE_Y);
     }
 
-    public Rectangle GetRectangle()
+    public virtual Rectangle GetRectangle()
     {
         return new Rectangle(this.GetPosition(), this.SizeAsPoint());
     } 

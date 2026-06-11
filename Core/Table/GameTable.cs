@@ -8,7 +8,7 @@ namespace GAME.TABLE;
 
 public static class GameTable
 {
-    private static List<GameElement> TABLE_ELEMENTS = new List<GameElement>();
+    public static List<GameElement> TABLE_ELEMENTS = new List<GameElement>();
     public static int TABLE_SIZE_X { get; private set; }
     public static int TABLE_SIZE_Y { get; private set; }
     private static readonly Rectangle TS_TILE = new Rectangle(24, 24, 24, 24);
@@ -34,6 +34,8 @@ public static class GameTable
                     (short)posX, (short)posY,
                     (short)tileSize, (short)tileSize, true);
                 
+                element.TABLE_POSITION_X = x;
+                element.TABLE_POSITION_Y = y;
                 element.CONFIG = new GameInterfaceConfig(true, false);
                 element.PLAYER_OWN = (y >= 3 && y <= 6);
                 GameRendererConfig eConfig = new GameRendererConfig();

@@ -1,10 +1,13 @@
 using ENGINE.MODELS;
+using Microsoft.Xna.Framework;
 
 public class PokemonEntity : GameEntity
 {
     public PokemonEntity(short POS_X, short POS_Y, short SIZE_X, short SIZE_Y, bool VISIBLE) : base(POS_X, POS_Y, SIZE_X, SIZE_Y, VISIBLE) { }
 
     public Pokemon POKEMON;
+    public bool ENEMY = true;
+    private PokemonEntity TARGET = null;
 
     public static PokemonEntity Copy(PokemonEntity SOURCE)
     {
@@ -19,6 +22,16 @@ public class PokemonEntity : GameEntity
         _copy.SIZE_Y    = SOURCE.SIZE_Y;
         _copy.VISIBLE   = SOURCE.VISIBLE;
         return _copy;
+    }
+
+    public void SetTarget(PokemonEntity TARGET){ this.TARGET = TARGET; }
+    public PokemonEntity GetTarget(){ return this.TARGET; }
+
+    public override Rectangle GetRectangle()
+    {
+        var cfg = this.GetEntityConfig();
+        int realSize = cfg.SLICE_SIZE * cfg.SIZE;
+        return new Rectangle(this.GetPosition().X, this.GetPosition().Y, realSize, realSize);
     }
     
 

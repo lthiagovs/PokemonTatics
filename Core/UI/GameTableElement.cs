@@ -9,6 +9,9 @@ public class GameTableElement : GameInterfaceElement
 
     private static List<GameElement> TABLE_ELEMENTS = new List<GameElement>();
 
+    public int TABLE_POSITION_X = 0;
+    public int TABLE_POSITION_Y = 0;
+
     public GameTableElement(short POS_X, short POS_Y, short SIZE_X, short SIZE_Y, bool VISIBLE, GameInterfaceElement PARENT = null) : 
     base(POS_X, POS_Y, SIZE_X, SIZE_Y, VISIBLE, PARENT) { }
 
@@ -19,6 +22,8 @@ public class GameTableElement : GameInterfaceElement
     public static List<GameElement> GetTableElements() { return GameTableElement.TABLE_ELEMENTS; }
 
     public bool HasPokemon() { return POKEMON_ENTITY!=null; }
+
+    public PokemonEntity GetPokemon() { return POKEMON_ENTITY; }
 
     public void InsertPokemon(PokemonEntity POKEMON) { 
         GameEntityRenderConfig cfg = new GameEntityRenderConfig();
@@ -79,10 +84,12 @@ public class GameTableElement : GameInterfaceElement
                     this.GetRectangle().Y + (this.GetRectangle().Height / 2) - (cfg.SLICE_SIZE * cfg.SIZE / 2)
                 ));
                 this.POKEMON_ENTITY.SetEntityConfig(cfg);
+                this.POKEMON_ENTITY.ENEMY = false;
                 GameTableElement.TABLE_ELEMENTS.Add(this.POKEMON_ENTITY);
                 Console.WriteLine("PLACED");
             } else if (GameMouse.LeftPressed() && !GameMouse.IsCarryElement() && this.POKEMON_ENTITY!=null)
             {
+                this.POKEMON_ENTITY.DIRECTION = GameDirection.TOP_RIGHT;
                 GameMouse.SetCarryElement(PokemonEntity.Copy(this.POKEMON_ENTITY));
                 TABLE_ELEMENTS.Remove(this.POKEMON_ENTITY);
                 this.POKEMON_ENTITY = null;
