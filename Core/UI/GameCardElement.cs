@@ -45,6 +45,11 @@ public class GameCardElement : GameInterfaceElement
             //DRAG
             if(GameMouse.LeftPressed() && !GameMouse.IsCarryElement())
             {
+
+                if(POKEMON_ENTITY.POKEMON.COST > GameGlobals.PLAYER_MANA) return;
+
+                GameGlobals.ChangeMana(POKEMON_ENTITY.POKEMON.COST*-1);
+
                 PokemonEntity _carry = new PokemonEntity(0, 0, 32, 32, true);
                 _carry.POKEMON    = this.POKEMON_ENTITY.POKEMON;
                 _carry.DIRECTION  = this.POKEMON_ENTITY.DIRECTION;

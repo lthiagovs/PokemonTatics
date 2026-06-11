@@ -15,7 +15,7 @@ public static class GameTable
     public static List<GameElement> GetTable() { return GameTable.TABLE_ELEMENTS; }
 
     //ENEMY TEAM
-    private static int ENEMY_SIZE = 7;
+    private static int ENEMY_SIZE = Math.Min(1 + (GameGlobals.LEVEL - 1), 7);
 
     public static void Initialize()
     {
@@ -66,11 +66,28 @@ public static class GameTable
     
     public static void InitializeEnemyTeam()
     {
+        int count = Math.Min(1 + (GameGlobals.LEVEL - 1), 7);
+        float statScale = 1f + Math.Max(0, GameGlobals.LEVEL - 3) * 0.10f;
+        
         List<Pokemon> _pkmList = GetRandomDecks();
         Random _random = new Random();
 
-        foreach(Pokemon pkm in _pkmList)
+        for(int i = 0; i < count; i++)
         {
+            Pokemon original = _pkmList[_random.Next(0, _pkmList.Count)];
+            Pokemon scaled = new Pokemon(
+                original.NAME,
+                (int)(original.MAX_HP * statScale),
+                (int)(original.ATK    * statScale),
+                (int)(original.DEF    * statScale),
+                (int)(original.SPATK  * statScale),
+                (int)(original.SPDEF  * statScale),
+                (int)(original.SPEED  * statScale),
+                original.TYPE,
+                original.COST,
+                original.EVOLUTION_LEVEL
+            );
+
             bool repeat = true;
             do{
                 int index = _random.Next(0, 53);
@@ -78,24 +95,18 @@ public static class GameTable
                 if(!tElement.HasPokemon())
                 {
                     PokemonEntity _pkmEntity = new PokemonEntity(0, 0, 32, 32, true);
-                    _pkmEntity.POKEMON = pkm;
-
+                    _pkmEntity.POKEMON = scaled;
                     GameEntityRenderConfig cfg = new GameEntityRenderConfig();
-                    cfg.TEXTURE_PATH = "Pokemons/"+pkm.NAME+"/moveset";
+                    cfg.TEXTURE_PATH = "Pokemons/" + scaled.NAME + "/moveset";
                     cfg.SLICE_SIZE = 32;
                     cfg.SIZE = 3;
                     cfg.ANIMATION_SPEED = 1;
-
                     _pkmEntity.SetEntityConfig(cfg);
                     tElement.InsertPokemon(_pkmEntity);
-
                     repeat = false;
                 }
-
             }while(repeat);
         }
-
-
     }
 
 }

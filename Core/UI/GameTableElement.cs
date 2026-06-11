@@ -32,15 +32,19 @@ public class GameTableElement : GameInterfaceElement
                 cfg.SIZE           = 3;
                 cfg.ANIMATION_SPEED = 1;
         
-        POKEMON.SetPosition(new Point(
+        Point _pkmPoint = new Point(
                     this.GetRectangle().X + (this.GetRectangle().Width  / 2) - (cfg.SLICE_SIZE * cfg.SIZE / 2),
-                    this.GetRectangle().Y + (this.GetRectangle().Height / 2) - (cfg.SLICE_SIZE * cfg.SIZE / 2)));
+                    this.GetRectangle().Y + (this.GetRectangle().Height / 2) - (cfg.SLICE_SIZE * cfg.SIZE / 2));
+        POKEMON.SetPosition(_pkmPoint);
+        POKEMON.START = _pkmPoint;
         
         POKEMON.DIRECTION = GameDirection.BOTTOM_LEFT;
 
         if(POKEMON!=null) this.POKEMON_ENTITY = POKEMON; 
         GameTableElement.TABLE_ELEMENTS.Add(POKEMON);
     }
+
+    public void ClearPokemon() { this.POKEMON_ENTITY = null; }
 
     public override void Update()
     {
@@ -83,6 +87,7 @@ public class GameTableElement : GameInterfaceElement
                     this.GetRectangle().X + (this.GetRectangle().Width  / 2) - (cfg.SLICE_SIZE * cfg.SIZE / 2),
                     this.GetRectangle().Y + (this.GetRectangle().Height / 2) - (cfg.SLICE_SIZE * cfg.SIZE / 2)
                 ));
+                this.POKEMON_ENTITY.START = this.POKEMON_ENTITY.GetPosition();
                 this.POKEMON_ENTITY.SetEntityConfig(cfg);
                 this.POKEMON_ENTITY.ENEMY = false;
                 GameTableElement.TABLE_ELEMENTS.Add(this.POKEMON_ENTITY);

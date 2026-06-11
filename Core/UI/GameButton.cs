@@ -22,7 +22,6 @@ public class GameButton : GameInterfaceElement
             if (GameMouse.LeftPressed())
             {
                 if(!GameGlobals.GAME_STARTED) { GameGlobals.GAME_STARTED = true; this.RENDER_CONFIG.COLOR = Color.Green * 2.2f; }
-                else GameGlobals.GAME_STARTED = false;
             }
 
         }

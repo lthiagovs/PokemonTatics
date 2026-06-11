@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization.Formatters;
@@ -146,7 +147,6 @@ public static class GameRenderer
         int s      = cfg.SLICE_SIZE;
         int frame  = ENTITY.IS_MOVING ? ENTITY.GetFrame() : 0;
         bool flip  = false;
-
         int row;
         switch (ENTITY.DIRECTION)
         {
@@ -160,10 +160,8 @@ public static class GameRenderer
             case GameDirection.BOTTOM_RIGHT: row = 4; flip = true; break;
             default:                         row = 0; break;
         }
-
-        int[] frameOrder = { 1, 2, 1, 2 };
+        int[] frameOrder = { 1, 0, 2, 0 };
         int col = frameOrder[frame % 4];
-
         Rectangle src  = new Rectangle(col * s, row * s, s, s);
         Rectangle dest = new Rectangle(
             ENTITY.GetRectangle().X,
@@ -171,12 +169,34 @@ public static class GameRenderer
             s * cfg.SIZE,
             s * cfg.SIZE
         );
-
         Texture2D texture = LoadTexture(cfg.TEXTURE_PATH);
-
         SpriteEffects effect = flip ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
-
         SpriteBatch.Draw(texture, dest, src, Color.White, 0f, Vector2.Zero, effect, 0f);
+
+        if(ENTITY is PokemonEntity)
+        {
+            PokemonEntity pkm = ENTITY as PokemonEntity;
+
+            int barW   = (int)(dest.Width * 0.7f);
+            int barH   = 6;
+            int barX   = dest.X + (dest.Width - barW) / 2;
+            int barY   = dest.Y - barH - 6;
+
+            float hpPercent = Math.Clamp(pkm.POKEMON.HP / (float)pkm.POKEMON.MAX_HP, 0f, 1f);
+            SpriteBatch.Draw(PIXEL, new Rectangle(barX, barY, barW, barH), Color.Black);
+            SpriteBatch.Draw(PIXEL, new Rectangle(barX, barY, (int)(barW * hpPercent), barH), new Color(180, 60, 60));
+            
+
+            int xpBarY = barY + barH + 3;
+            float xpPercent = Math.Clamp(pkm.POKEMON.XP / (float)pkm.POKEMON.XPToNextLevel(), 0f, 1f);
+            SpriteBatch.Draw(PIXEL, new Rectangle(barX, xpBarY, barW, barH), Color.Black);
+            SpriteBatch.Draw(PIXEL, new Rectangle(barX, xpBarY, (int)(barW * xpPercent), barH), new Color(60, 100, 220));
+
+            string lvlText = $"L{pkm.POKEMON.LEVEL}";
+            int lvlX = barX + barW + 4;
+            int lvlY = barY + (barH / 2) - 5;
+            SpriteBatch.DrawString(GAME_FONT, lvlText, new Vector2(lvlX, lvlY), Color.White);
+        }
     }
 
     public static void Render(GameElement ELEMENT)

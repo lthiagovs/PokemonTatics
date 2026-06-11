@@ -11,8 +11,8 @@ public static class GameDeck
     public static List<GameElement> GetDeck() { return GameDeck.DECK_ELEMENTS; }
     public static List<Pokemon> PokemonDecks = new List<Pokemon>();
 
-    private static int CURRENT_HP = 75;
-    private static int CURRENT_MANA = 75;
+    private static GameInterfaceElement HP_METER;
+    private static GameInterfaceElement MANA_METER;
 
     private static int DECK_SIZE = 7;
 
@@ -117,10 +117,16 @@ public static class GameDeck
 
     }
 
+    public static void Reset()
+    {
+        GameDeck.DECK_ELEMENTS.Clear();
+        GameDeck.Initialize();
+    }
+
     public static void BuildHpBar(GameInterfaceElement WINDOW)
     {
         int scale = 3;
-        int stats_bar_size = (int)(GameDeck.CURRENT_HP / 100f * 10);
+        int stats_bar_size = (int)(GameGlobals.PLAYER_HP / 100f * 10);
 
         var hp_bar = new GameInterfaceElement(
                 (short) (80), (short)(-20),
@@ -140,20 +146,22 @@ public static class GameDeck
 
         GameDeck.DECK_ELEMENTS.Add(hp_bar);
         GameDeck.DECK_ELEMENTS.Add(hp_meter);
+        GameDeck.HP_METER = hp_meter;
 
     }
 
     public static void BuildManaBar(GameInterfaceElement WINDOW)
     {
         int scale = 3;
-        int stats_bar_size = (int)(GameDeck.CURRENT_MANA / 100f * 10);
+        int stats_bar_size = (int)(GameGlobals.PLAYER_MANA / 100f * 10);
+
 
         var mana_bar = new GameInterfaceElement(
                 (short) (0), (short)(0),
                 (short)(80*scale), (short)(14*scale), true);
             mana_bar.SetRendererConfig(new GameRendererConfig(Color.White, null, "UI/Windows/statusbar", new Rectangle(0, 0, 80, 14), false));
             mana_bar.PARENT = WINDOW;
-            mana_bar.SetPosition(new Point((WINDOW.SIZE_X-(6*scale*stats_bar_size*2)-100),-15));
+            mana_bar.SetPosition(new Point(WINDOW.SIZE_X - (80 * scale) - 100, -15));
             mana_bar.CONFIG = new GameInterfaceConfig(false, false);
 
         var mana_meter = new GameInterfaceElement(
@@ -166,6 +174,7 @@ public static class GameDeck
 
         GameDeck.DECK_ELEMENTS.Add(mana_bar);
         GameDeck.DECK_ELEMENTS.Add(mana_meter);
+        GameDeck.MANA_METER = mana_meter;
 
     }
 
@@ -200,4 +209,23 @@ public static class GameDeck
             PokemonDecks.Add(PokemonDatabase.PokemonList[index]);
         }
     }
+
+    public static void Update()
+    {
+        
+        int scale = 3;
+        int hpSize   = (int)(6 * scale * (GameGlobals.PLAYER_HP   / 100f * 10));
+        int manaSize = (int)(6 * scale * (GameGlobals.PLAYER_MANA / 100f * 10));
+        if(HP_METER != null)
+        {
+            HP_METER.SIZE_X  = (short)hpSize;
+            HP_METER.VISIBLE = hpSize > 0;
+        }
+        if(MANA_METER != null)
+        {
+            MANA_METER.SIZE_X  = (short)manaSize;
+            MANA_METER.VISIBLE = manaSize > 0;
+        }
+    }
+    
 }

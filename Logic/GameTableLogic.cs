@@ -26,6 +26,7 @@ public static class GameTableLogic
     {
         GameTableLogic.SetTableTargets();
         GameTableLogic.MovePokemons();
+        GameTableLogic.DetectGameEnd();
     }
 
     //Helpers
@@ -58,14 +59,23 @@ public static class GameTableLogic
         return _pokemons;
     }
 
+    private static List<PokemonEntity> GetAllLivePokemons()
+    {
+        List<PokemonEntity> _pokemons = new List<PokemonEntity>();
+        foreach(GameElement e in GameTableElement.GetTableElements())
+            if(e is PokemonEntity){ if(!(e as PokemonEntity).DEAD) _pokemons.Add(e as PokemonEntity); }
+        
+        return _pokemons;
+    }
+
     private static List<PokemonEntity> GetEnemyPokemons()
     {
-        return GameTableLogic.GetAllPokemons().FindAll(p => p.ENEMY);
+        return GameTableLogic.GetAllLivePokemons().FindAll(p => p.ENEMY);
     }
 
     private static List<PokemonEntity> GetPlayerPokemons()
     {
-        return GameTableLogic.GetAllPokemons().FindAll(p => !p.ENEMY);
+        return GameTableLogic.GetAllLivePokemons().FindAll(p => !p.ENEMY);
     }
 
     private static int GetDistanceOverhaul(Point P1, Point P2)
@@ -78,6 +88,8 @@ public static class GameTableLogic
         List<PokemonEntity> _pokemon;
         if(POKEMON.ENEMY) _pokemon = GetPlayerPokemons();
         else _pokemon = GetEnemyPokemons();
+
+        if(_pokemon.Count == 0) return null;
 
         PokemonEntity closest = _pokemon[0];
         int closestOverhaul = GameTableLogic.GetDistanceOverhaul(POKEMON.GetPosition(), _pokemon[0].GetPosition());
@@ -96,14 +108,20 @@ public static class GameTableLogic
 
     private static void SetTableTargets()
     {
-        List<PokemonEntity> _pokemons = GetAllPokemons();
-        foreach(PokemonEntity e in _pokemons) if(e.GetTarget() == null) e.SetTarget(GameTableLogic.GetClosestEnemy(e));
-
+        List<PokemonEntity> _pokemons = GetAllLivePokemons();
+        foreach(PokemonEntity e in _pokemons)
+        {
+            if(e.GetTarget() == null)
+            {
+                PokemonEntity closest = GameTableLogic.GetClosestEnemy(e);
+                if(closest != null) e.SetTarget(closest);
+            }
+        }
     }
 
     private static void ClearTableTargets()
     {
-        List<PokemonEntity> _pokemons = GetAllPokemons();
+        List<PokemonEntity> _pokemons = GetAllLivePokemons();
         foreach(PokemonEntity e in _pokemons) e.SetTarget(null);
 
     }
@@ -112,7 +130,11 @@ public static class GameTableLogic
     private static void MovePokemonToTarget(PokemonEntity POKEMON)
     {
         if(POKEMON.GetTarget() == null) { POKEMON.IS_MOVING = false; return; }
-        if(POKEMON.GetRectangle().Intersects(POKEMON.GetTarget().GetRectangle())) { POKEMON.IS_MOVING = false; return; }
+        if(POKEMON.GetRectangle().Intersects(POKEMON.GetTarget().GetRectangle())) { 
+            GameTableLogic.AttackTarget(POKEMON.GetTarget());
+            POKEMON.IS_MOVING = false; 
+            return; 
+        }
 
         POKEMON.IS_MOVING = true;
 
@@ -138,7 +160,7 @@ public static class GameTableLogic
 
     private static void MovePokemons()
     {
-        List<PokemonEntity> _pokemons = GameTableLogic.GetAllPokemons();
+        List<PokemonEntity> _pokemons = GameTableLogic.GetAllLivePokemons();
 
         foreach(PokemonEntity p in _pokemons)
         {
@@ -147,9 +169,60 @@ public static class GameTableLogic
 
     }
 
-    private static void UpdatePokemons() { foreach(PokemonEntity p in GameTableLogic.GetAllPokemons()) p.Update(); }
+    private static void UpdatePokemons() { foreach(PokemonEntity p in GameTableLogic.GetAllLivePokemons()) p.Update(); }
     
     //Attack Logic
-    
+    private static void AttackTarget(PokemonEntity POKEMON)
+    {
+        if(POKEMON.GetTarget()==null) return;
+
+        POKEMON.GetTarget().POKEMON.HP -= POKEMON.POKEMON.ATK;
+        if(POKEMON.GetTarget().POKEMON.HP <= 0) KillPokemon(POKEMON.GetTarget());
+    }
+
+    private static void KillPokemon(PokemonEntity POKEMON)
+    {
+        foreach(PokemonEntity p in GetAllLivePokemons())
+            if(p.GetTarget() == POKEMON) p.SetTarget(null);
+
+        POKEMON.DEAD = true;
+        POKEMON.VISIBLE = false;
+
+        if(POKEMON.ENEMY) GameGlobals.ChangeMana(+1);
+    }
+
+    private static void DetectGameEnd()
+    {
+        if(GameTableLogic.GetEnemyPokemons().Count != 0 && GameTableLogic.GetPlayerPokemons().Count != 0) return;
+
+        if(GameTableLogic.GetPlayerPokemons().Count == 0) GameGlobals.PLAYER_HP-=10;
+        
+        GameTableLogic.GetAllPokemons().ForEach(e => e.POKEMON.GainXP(10));
+        //RESET POSITIONS:
+        GameTableLogic.GetAllPokemons().ForEach(e => e.SetPosition(e.START));
+        GameTableLogic.GetAllPokemons().ForEach(e => e.POKEMON.HP=e.POKEMON.MAX_HP);
+        GameTableLogic.GetAllPokemons().ForEach(e => e.IS_MOVING = false);
+        GameTableLogic.GetAllPokemons().ForEach(e => e.DEAD = false);
+        GameTableLogic.GetAllPokemons().ForEach(e => e.VISIBLE = true);
+        GameGlobals.GAME_STARTED = false;
+        GameTableLogic.ClearEnemyPokemons();
+        GameTable.InitializeEnemyTeam();
+        GameGlobals.ChangeMana(+3);
+        GameGlobals.LEVEL+=1;
+    }
+
+    private static void ClearEnemyPokemons()
+    {
+        GameTableElement.GetTableElements().RemoveAll(e => e is PokemonEntity && (e as PokemonEntity).ENEMY);
+
+        foreach(GameElement e in GameTable.TABLE_ELEMENTS)
+        {
+            if(e is GameTableElement)
+            {
+                GameTableElement tEle = e as GameTableElement;
+                if(tEle.HasPokemon() && tEle.GetPokemon().ENEMY) tEle.ClearPokemon();
+            }
+        }
+    }
 
 }
