@@ -1,9 +1,9 @@
+using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
+using ENGINE.MODELS;
 using GAME.CORE;
-using GAME.UI;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Content;
+
 namespace GAME.TABLE;
 
 public static class GameTable
@@ -11,10 +11,11 @@ public static class GameTable
     private static List<GameElement> TABLE_ELEMENTS = new List<GameElement>();
     public static int TABLE_SIZE_X { get; private set; }
     public static int TABLE_SIZE_Y { get; private set; }
-
     private static readonly Rectangle TS_TILE = new Rectangle(24, 24, 24, 24);
-
     public static List<GameElement> GetTable() { return GameTable.TABLE_ELEMENTS; }
+
+    //ENEMY TEAM
+    private static int ENEMY_SIZE = 7;
 
     public static void Initialize()
     {
@@ -43,4 +44,56 @@ public static class GameTable
             }
         }
     }
+
+    //ENEMY TEAM GENERATION
+
+    private static List<Pokemon> GetRandomDecks()
+    {
+        Random _random = new Random();
+        GameDeck.PokemonDecks.Clear();
+        List<Pokemon> _pkmList = new List<Pokemon>();
+
+        for (int i = 0; i < GameTable.ENEMY_SIZE; i++)
+        {
+            int index = _random.Next(0, PokemonDatabase.PokemonList.Count);
+            _pkmList.Add(PokemonDatabase.PokemonList[index]);
+        }
+
+        return _pkmList;
+    }
+    
+    public static void InitializeEnemyTeam()
+    {
+        List<Pokemon> _pkmList = GetRandomDecks();
+        Random _random = new Random();
+
+        foreach(Pokemon pkm in _pkmList)
+        {
+            bool repeat = true;
+            do{
+                int index = _random.Next(0, 53);
+                GameTableElement tElement = GameTable.TABLE_ELEMENTS[index] as GameTableElement;
+                if(!tElement.HasPokemon())
+                {
+                    PokemonEntity _pkmEntity = new PokemonEntity(0, 0, 32, 32, true);
+                    _pkmEntity.POKEMON = pkm;
+
+                    GameEntityRenderConfig cfg = new GameEntityRenderConfig();
+                    cfg.TEXTURE_PATH = "Pokemons/"+pkm.NAME+"/moveset";
+                    cfg.SLICE_SIZE = 32;
+                    cfg.SIZE = 3;
+                    cfg.ANIMATION_SPEED = 1;
+
+                    _pkmEntity.SetEntityConfig(cfg);
+                    tElement.InsertPokemon(_pkmEntity);
+
+                    repeat = false;
+                }
+
+            }while(repeat);
+        }
+
+
+    }
+
 }
