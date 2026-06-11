@@ -18,10 +18,31 @@ public class GameTableElement : GameInterfaceElement
 
     public static List<GameElement> GetTableElements() { return GameTableElement.TABLE_ELEMENTS; }
 
+    public bool HasPokemon() { return POKEMON_ENTITY!=null; }
+
+    public void InsertPokemon(PokemonEntity POKEMON) { 
+        GameEntityRenderConfig cfg = new GameEntityRenderConfig();
+                cfg.TEXTURE_PATH   = "Pokemons/" + POKEMON.POKEMON.NAME + "/moveset";
+                cfg.SLICE_SIZE     = 32;
+                cfg.SIZE           = 3;
+                cfg.ANIMATION_SPEED = 1;
+        
+        POKEMON.SetPosition(new Point(
+                    this.GetRectangle().X + (this.GetRectangle().Width  / 2) - (cfg.SLICE_SIZE * cfg.SIZE / 2),
+                    this.GetRectangle().Y + (this.GetRectangle().Height / 2) - (cfg.SLICE_SIZE * cfg.SIZE / 2)));
+        
+        POKEMON.DIRECTION = GameDirection.BOTTOM_LEFT;
+
+        if(POKEMON!=null) this.POKEMON_ENTITY = POKEMON; 
+        GameTableElement.TABLE_ELEMENTS.Add(POKEMON);
+    }
+
     public override void Update()
     {
 
         this.GetRendererConfig().COLOR = COLOR_STATE;
+
+        if(!this.PLAYER_OWN) return;
 
         // MOUSE DETECTION
         if(this.GetRectangle().Intersects(GameMouse.GetRectangle())) {
@@ -60,7 +81,7 @@ public class GameTableElement : GameInterfaceElement
                 this.POKEMON_ENTITY.SetEntityConfig(cfg);
                 GameTableElement.TABLE_ELEMENTS.Add(this.POKEMON_ENTITY);
                 Console.WriteLine("PLACED");
-            } else if (GameMouse.LeftPressed() && !GameMouse.IsCarryElement() && this.POKEMON_ENTITY!=null && PLAYER_OWN)
+            } else if (GameMouse.LeftPressed() && !GameMouse.IsCarryElement() && this.POKEMON_ENTITY!=null)
             {
                 GameMouse.SetCarryElement(PokemonEntity.Copy(this.POKEMON_ENTITY));
                 TABLE_ELEMENTS.Remove(this.POKEMON_ENTITY);
