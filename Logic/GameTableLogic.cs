@@ -171,12 +171,34 @@ public static class GameTableLogic
 
     private static void UpdatePokemons() { foreach(PokemonEntity p in GameTableLogic.GetAllLivePokemons()) p.Update(); }
     
+    private static void FaceTarget(PokemonEntity POKEMON)
+    {
+        if(POKEMON.GetTarget() == null) return;
+
+        int dx = POKEMON.GetTarget().GetPosition().X - POKEMON.GetPosition().X;
+        int dy = POKEMON.GetTarget().GetPosition().Y - POKEMON.GetPosition().Y;
+
+        if      (dx > 0 && dy < 0) POKEMON.DIRECTION = GameDirection.TOP_RIGHT;
+        else if (dx < 0 && dy < 0) POKEMON.DIRECTION = GameDirection.TOP_LEFT;
+        else if (dx > 0 && dy > 0) POKEMON.DIRECTION = GameDirection.BOTTOM_RIGHT;
+        else if (dx < 0 && dy > 0) POKEMON.DIRECTION = GameDirection.BOTTOM_LEFT;
+        else if (dx > 0)            POKEMON.DIRECTION = GameDirection.RIGHT;
+        else if (dx < 0)            POKEMON.DIRECTION = GameDirection.LEFT;
+        else if (dy > 0)            POKEMON.DIRECTION = GameDirection.BOTTOM;
+        else if (dy < 0)            POKEMON.DIRECTION = GameDirection.TOP;
+    }
+
     //Attack Logic
     private static void AttackTarget(PokemonEntity POKEMON)
     {
         if(POKEMON.GetTarget()==null) return;
 
-        POKEMON.GetTarget().POKEMON.HP -= POKEMON.POKEMON.ATK;
+        //every 1s
+        if(!(GameTimeLogic.FRAC_TICK && GameTimeLogic.FRAC % 10 == 0)) return;
+
+        GameTableLogic.FaceTarget(POKEMON);
+        POKEMON.POKEMON.Attack(POKEMON.GetTarget().POKEMON);
+        POKEMON.GetTarget().SetEffect(new RenderEffect(RenderEffectType.FLASH, 0.3f));
         if(POKEMON.GetTarget().POKEMON.HP <= 0) KillPokemon(POKEMON.GetTarget());
     }
 

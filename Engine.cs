@@ -33,6 +33,7 @@ public class Engine : Game
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
 
+        //TitleScreen.Initialize();
         GameRenderer.InitializeRenderer(_spriteBatch, GraphicsDevice, Content);
         GameRenderer.SetFont(Content.Load<SpriteFont>("Fonts/GameFont"));
         GameTable.Initialize();
@@ -49,6 +50,9 @@ public class Engine : Game
 
     protected override void Update(GameTime gameTime)
     {
+
+        GameTimeLogic.Update(gameTime);
+
         if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
             Exit();
 

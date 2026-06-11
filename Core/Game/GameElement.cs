@@ -75,6 +75,17 @@ public class GameElement
 
     public virtual void SetRendererConfig(GameRendererConfig CONFIG) { this.RENDER_CONFIG = CONFIG; }
 
+    public RenderEffect EFFECT = null;
+
+    public void SetEffect(RenderEffect effect) { EFFECT = effect; }
+
+    public void UpdateEffect()
+    {
+        if(EFFECT == null) return;
+        EFFECT.Update(GameTimeLogic.DELTA);
+        if(EFFECT.DONE) EFFECT = null;
+    }
+
     public virtual void Update() {}
     #endregion
 

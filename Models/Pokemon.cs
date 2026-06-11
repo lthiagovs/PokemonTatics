@@ -1,3 +1,5 @@
+using System;
+
 namespace ENGINE.MODELS;
 
 public class Pokemon
@@ -20,6 +22,24 @@ public class Pokemon
 
     public int XPToNextLevel() => (int)(LEVEL * LEVEL * 10 * 1.5f);
 
+    public Pokemon(string NAME, int HP, int ATK, int SPATK, int DEF, int SPDEF, int SPEED, PokemonType TYPE, int COST, int EVOLUTION_LEVEL, Pokemon EVOLUTION = null)
+    {
+        this.NAME = NAME;
+        this.HP = HP;
+        this.MAX_HP = HP;
+        this.ATK = ATK;
+        this.SPATK = SPATK;
+        this.DEF = DEF;
+        this.SPDEF = SPDEF;
+        this.SPEED = SPEED;
+        this.TYPE = TYPE;
+        this.COST = COST;
+        this.EVOLUTION = EVOLUTION;
+        this.EVOLUTION_LEVEL= EVOLUTION_LEVEL;
+        
+    }
+
+    #region XP
     public void GainXP(int amount)
     {
         XP += amount;
@@ -60,23 +80,25 @@ public class Pokemon
         this.TYPE   = EVOLUTION.TYPE;
         this.EVOLUTION = EVOLUTION.EVOLUTION;
     }
+    #endregion
 
-    public Pokemon(string NAME, int HP, int ATK, int SPATK, int DEF, int SPDEF, int SPEED, PokemonType TYPE, int COST, int EVOLUTION_LEVEL, Pokemon EVOLUTION = null)
+    #region COMBAT
+    public void Attack(Pokemon TARGET)
     {
-        this.NAME = NAME;
-        this.HP = HP;
-        this.MAX_HP = HP;
-        this.ATK = ATK;
-        this.SPATK = SPATK;
-        this.DEF = DEF;
-        this.SPDEF = SPDEF;
-        this.SPEED = SPEED;
-        this.TYPE = TYPE;
-        this.COST = COST;
-        this.EVOLUTION = EVOLUTION;
-        this.EVOLUTION_LEVEL= EVOLUTION_LEVEL;
-        
+        Random _random = new Random();
+        float roll = (float)(_random.NextDouble() * 0.15f + 0.85f);
+
+        float levelMod = (2f * LEVEL + 10f) / 250f;
+
+        float physDamage  = levelMod * ((float)ATK   / TARGET.DEF)   * 50 + 2;
+        float specDamage  = levelMod * ((float)SPATK / TARGET.SPDEF) * 50 + 2;
+
+        float totalDamage = (physDamage * 0.5f + specDamage * 0.5f) * roll;
+
+        TARGET.HP -= (int) totalDamage;
     }
+    #endregion
+
 }
 
 public enum PokemonType

@@ -1,6 +1,3 @@
-
-using System.Runtime.CompilerServices;
-using System.Runtime.Serialization.Formatters;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 

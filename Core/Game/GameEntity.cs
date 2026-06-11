@@ -1,4 +1,5 @@
 using GAME.CORE;
+using Microsoft.Xna.Framework;
 
 public class GameEntity : GameElement
 {
@@ -11,8 +12,6 @@ public class GameEntity : GameElement
     public GameDirection DIRECTION = GameDirection.TOP_RIGHT;
     private GameEntityRenderConfig CONFIG;
     private int FRAME = 0;
-    private int FRAME_TIMER = 0;
-    private int FRAME_SPEED = 10;
     public bool IS_MOVING = false;
 
     public int GetFrame() { return this.FRAME; }
@@ -22,19 +21,16 @@ public class GameEntity : GameElement
 
     public void UpdateAnimation()
     {
-        if(!IS_MOVING) { FRAME = 0; FRAME_TIMER = 0; return; }
+        if(!IS_MOVING) { FRAME = 0; return; }
         
-        FRAME_TIMER++;
-        if(FRAME_TIMER >= FRAME_SPEED)
-        {
-            FRAME_TIMER = 0;
-            FRAME = (FRAME + 1) % 4;
-        }
+        if(GameTimeLogic.FRAC_TICK && GameTimeLogic.FRAC % 2 == 0)
+        FRAME = (FRAME + 1) % 4;
     }
 
     public override void Update()
     {
         this.UpdateAnimation();
+        this.UpdateEffect();
     }
     
 
