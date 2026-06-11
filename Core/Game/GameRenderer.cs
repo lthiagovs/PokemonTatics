@@ -44,6 +44,7 @@ public static class GameRenderer
 
     public static void SetFont(SpriteFont FONT) { GameRenderer.GAME_FONT = FONT; }
 
+    public static SpriteFont GetGameFont() { return GameRenderer.GAME_FONT; }
     private static Texture2D LoadTexture(string path)
     {
         if (!_textureCache.TryGetValue(path, out Texture2D texture))
