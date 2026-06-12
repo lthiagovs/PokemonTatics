@@ -2,8 +2,10 @@
 using GAME.TABLE;
 using GAME.UI;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Media;
 
 public class Engine : Game
 {
@@ -33,7 +35,13 @@ public class Engine : Game
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
 
-        //TitleScreen.Initialize();
+
+        GameMusic.MAIN = Content.Load<Song>("Songs/MAIN");
+        GameMusic.TITLE = Content.Load<Song>("Songs/TITLE");
+        GameMusic.VICTORY = Content.Load<SoundEffect>("Sounds/VICTORY");
+        GameMusic.LEVEL_UP = Content.Load<SoundEffect>("Sounds/LEVEL");
+        GameMusic.HIT = Content.Load<SoundEffect>("Sounds/HIT");
+        
         GameRenderer.InitializeRenderer(_spriteBatch, GraphicsDevice, Content);
         GameRenderer.SetFont(Content.Load<SpriteFont>("Fonts/GameFont"));
         GameTable.Initialize();
@@ -41,6 +49,7 @@ public class Engine : Game
         GameDeck.GetRandomDecks();
         GameDeck.Initialize();
         GameTable.InitializeEnemyTeam();
+        TitleScreen.Initialize();
 
         //TESTS
 
@@ -56,6 +65,8 @@ public class Engine : Game
         if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
             Exit();
 
+
+        if (GameGlobals.STATE == GameState.TITLE) GameRenderer.Update(TitleScreen.TITLE_ELEMENTS);
         GameMouse.SetStateDefault();
         GameRenderer.Update(GameTable.GetTable());
         GameRenderer.Update(GameDeck.GetDeck());
@@ -73,11 +84,15 @@ public class Engine : Game
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
-        GameRenderer.Render(GameMap.GetMap());
-        GameRenderer.Render(GameTable.GetTable());
-        GameRenderer.Render(GameDeck.GetDeck());
-        GameRenderer.Render(GameTableElement.GetTableElements());
-        GameRenderer.Render(GameMouse.GetCarryElement());
+        if(GameGlobals.STATE == GameState.TITLE) { GameRenderer.Render(TitleScreen.TITLE_ELEMENTS); }
+        else{
+            GameMusic.PlayMain();
+            GameRenderer.Render(GameMap.GetMap());
+            GameRenderer.Render(GameTable.GetTable());
+            GameRenderer.Render(GameDeck.GetDeck());
+            GameRenderer.Render(GameTableElement.GetTableElements());
+            GameRenderer.Render(GameMouse.GetCarryElement());
+        }
 
         base.Draw(gameTime);
     }

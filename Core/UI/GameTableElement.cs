@@ -91,7 +91,6 @@ public class GameTableElement : GameInterfaceElement
                 this.POKEMON_ENTITY.SetEntityConfig(cfg);
                 this.POKEMON_ENTITY.ENEMY = false;
                 GameTableElement.TABLE_ELEMENTS.Add(this.POKEMON_ENTITY);
-                Console.WriteLine("PLACED");
             } else if (GameMouse.LeftPressed() && !GameMouse.IsCarryElement() && this.POKEMON_ENTITY!=null)
             {
                 this.POKEMON_ENTITY.DIRECTION = GameDirection.TOP_RIGHT;

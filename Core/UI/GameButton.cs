@@ -1,3 +1,4 @@
+using System;
 using GAME.CORE;
 using GAME.UI;
 using Microsoft.Xna.Framework;
@@ -20,7 +21,10 @@ public class GameButton : GameInterfaceElement
 
             //ACTION
             if (GameMouse.LeftPressed())
-            {
+            {   
+                
+                if(GameGlobals.STATE == GameState.TITLE) { GameGlobals.STATE = GameState.GAME; Console.WriteLine("OK"); GameMusic.Stop(); return; }
+
                 if(!GameGlobals.GAME_STARTED) { GameGlobals.GAME_STARTED = true; this.RENDER_CONFIG.COLOR = Color.Green * 2.2f; }
             }
 

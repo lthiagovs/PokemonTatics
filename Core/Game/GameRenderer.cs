@@ -168,8 +168,15 @@ public static class GameRenderer
         }
 
         int col;
-        if(!ENTITY.IS_MOVING) col = 1;
-        else { int[] frameOrder = { 1, 0, 1, 2 }; col = frameOrder[frame % 4]; }
+        if(ENTITY.IsAnimated())
+            col = ENTITY.GetAnimation().GetFrame();
+        else if(!ENTITY.IS_MOVING)
+            col = 1;
+        else
+        {
+            int[] frameOrder = { 1, 0, 1, 2 };
+            col = frameOrder[frame % 4];
+        }
 
         Rectangle src  = new Rectangle(col * s, row * s, s, s);
         Rectangle dest = new Rectangle(
@@ -182,7 +189,6 @@ public static class GameRenderer
         Color tint         = (ENTITY.EFFECT?.TINT ?? Color.White) * alpha;
 
         DrawShadow(dest, cfg);
-        SpriteBatch.Draw(texture, dest, src, tint, 0f, Vector2.Zero, sfx, 0f);
         SpriteBatch.Draw(texture, dest, src, tint, 0f, Vector2.Zero, sfx, 0f);
 
         if(ENTITY is PokemonEntity)
@@ -220,8 +226,8 @@ public static class GameRenderer
             
         }
 
-
     }
+
     public static void Render(GameElement ELEMENT)
     {
         if(ELEMENT==null) return;

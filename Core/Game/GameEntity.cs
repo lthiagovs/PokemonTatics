@@ -16,10 +16,20 @@ public class GameEntity : GameElement
 
     public int GetFrame() { return this.FRAME; }
 
+    private GameAnimation ANIMATION = null;
+
     public GameEntityRenderConfig GetEntityConfig() { return this.CONFIG; }
     public void SetEntityConfig(GameEntityRenderConfig CONFIG) {this.CONFIG = CONFIG; }
 
-    public void UpdateAnimation()
+    public void SetAnimation(GameAnimation ANIMATION) { this.ANIMATION = ANIMATION; }
+
+    public GameAnimation GetAnimation() { return this.ANIMATION; }
+
+    public bool IsAnimated() { return ANIMATION!=null; }
+
+    public void UpdateAnimation() { if(this.IsAnimated()) this.ANIMATION.Update(); }
+
+    public void UpdateFrame()
     {
         if(!IS_MOVING) { FRAME = 0; return; }
         
@@ -29,6 +39,7 @@ public class GameEntity : GameElement
 
     public override void Update()
     {
+        this.UpdateFrame();
         this.UpdateAnimation();
         this.UpdateEffect();
     }

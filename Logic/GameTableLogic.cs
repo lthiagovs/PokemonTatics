@@ -196,7 +196,10 @@ public static class GameTableLogic
         //every 1s
         if(!(GameTimeLogic.FRAC_TICK && GameTimeLogic.FRAC % 10 == 0)) return;
 
+        GameMusic.PlayHit();
+
         GameTableLogic.FaceTarget(POKEMON);
+        POKEMON.SetAnimation(new GameAnimation { FRAMES = new[] { 2, 1, 0, 1 }, FRAME_SPEED = 0.06f, LOOP = false });
         POKEMON.POKEMON.Attack(POKEMON.GetTarget().POKEMON);
         POKEMON.GetTarget().SetEffect(new RenderEffect(RenderEffectType.FLASH, 0.3f));
         if(POKEMON.GetTarget().POKEMON.HP <= 0) KillPokemon(POKEMON.GetTarget());
@@ -218,6 +221,7 @@ public static class GameTableLogic
         if(GameTableLogic.GetEnemyPokemons().Count != 0 && GameTableLogic.GetPlayerPokemons().Count != 0) return;
 
         if(GameTableLogic.GetPlayerPokemons().Count == 0) GameGlobals.PLAYER_HP-=10;
+        else GameMusic.PlayVictory();
         
         GameTableLogic.GetAllPokemons().ForEach(e => e.POKEMON.GainXP(10));
         //RESET POSITIONS:

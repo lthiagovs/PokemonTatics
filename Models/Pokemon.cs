@@ -61,6 +61,7 @@ public class Pokemon
         DEF    = (int)(DEF   * growth);
         SPDEF  = (int)(SPDEF * growth);
         SPEED  = (int)(SPEED * growth);
+        GameMusic.PlayLevelUp();
 
         if(EVOLUTION != null && LEVEL >= EVOLUTION_LEVEL) Evolve();
     }

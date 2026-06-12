@@ -5,6 +5,7 @@ public static class GameGlobals{
     public static int PLAYER_HP = 100;
     public static int PLAYER_MANA = 10;
     public static int LEVEL = 1;
+    public static GameState STATE = GameState.TITLE;
 
     public static void ChangeMana(int VALUE)
     {
@@ -19,4 +20,10 @@ public static class GameGlobals{
         if(GameGlobals.PLAYER_HP < 0)   GameGlobals.PLAYER_HP = 0;
     }
 
+}
+
+public enum GameState
+{
+    TITLE,
+    GAME
 }

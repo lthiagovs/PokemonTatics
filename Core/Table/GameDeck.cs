@@ -212,7 +212,6 @@ public static class GameDeck
 
     public static void Update()
     {
-        Console.WriteLine($"hp_bar visible={HP_METER?.PARENT?.VISIBLE} pos={HP_METER?.PARENT?.GetPosition()} | meter visible={HP_METER?.VISIBLE} sizeX={HP_METER?.SIZE_X}");
         int scale = 3;
         int hpSize   = (int)(6 * scale * (GameGlobals.PLAYER_HP   / 100f * 10));
         int manaSize = (int)(6 * scale * (GameGlobals.PLAYER_MANA / 100f * 10));
