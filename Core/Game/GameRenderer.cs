@@ -65,6 +65,11 @@ public static class GameRenderer
        GameRenderer.SpriteBatch.DrawString(GameRenderer.GAME_FONT, TEXT, new Vector2(POSITION.X, POSITION.Y), COLOR);
     }
 
+    private static void WriteCustom(string TEXT, Point POSITION, Color COLOR, SpriteFont FONT)
+    {
+       GameRenderer.SpriteBatch.DrawString(GameRenderer.GAME_FONT, TEXT, new Vector2(POSITION.X, POSITION.Y), COLOR);
+    }
+
     private static void Draw(GameElement ELEMENT)
     {
         if(ELEMENT.GetRendererConfig() == null) return;
@@ -73,25 +78,88 @@ public static class GameRenderer
         float   alpha  = ELEMENT.EFFECT?.ALPHA  ?? 1f;
 
         if(ELEMENT is GameEntity) { GameRenderer.DrawEntity(ELEMENT as GameEntity, offset, alpha); return; }
+
+
         
         if(ELEMENT.GetRendererConfig().TEXT != null)
         {
             GameRenderer.Write(ELEMENT.GetRendererConfig().TEXT,
                 new Point(ELEMENT.GetPosition().X + (int)offset.X, ELEMENT.GetPosition().Y + (int)offset.Y),
                 ELEMENT.GetRendererConfig().COLOR * alpha);
-            return;
         }
-        
-        if(ELEMENT.GetRendererConfig().TEXTURE_PATH != null)
+        else if(ELEMENT.GetRendererConfig().TEXTURE_PATH != null)
         {
             if(ELEMENT.GetRendererConfig().IS_SLICE) GameRenderer.DrawNineSlice(ELEMENT, offset);
             else GameRenderer.DrawTexture(ELEMENT, offset);
-            return;
+        }
+        else
+        {
+            SpriteBatch.Draw(PIXEL,
+                new Rectangle(ELEMENT.GetPosition().X + (int)offset.X, ELEMENT.GetPosition().Y + (int)offset.Y, ELEMENT.SIZE_X, ELEMENT.SIZE_Y),
+                ELEMENT.GetRendererConfig().COLOR * alpha);
+        }
+
+        if(ELEMENT.GetRendererConfig().IS_HOVERING)
+            DrawHoverOverlay(ELEMENT, offset);
+
+        if (ELEMENT is GameHint hint)
+        {
+            var textEl = hint._textElement;
+            if (textEl != null && textEl.GetRendererConfig() != null)
+            {
+                Point mousePos = GameMouse.GetPos();
+                
+                int hintX = mousePos.X + 16;
+                int hintY = mousePos.Y + 16;
+                
+                // Texto centralizado no container, calculado na hora
+                Vector2 measured = GameRenderer.GetGameFont().MeasureString(textEl.GetRendererConfig().TEXT ?? "");
+                int textX = (hintX + (hint.SIZE_X - (int)measured.X) / 2) - 16;
+                int textY = (hintY + (hint.SIZE_Y - (int)measured.Y) / 2) - 16;
+
+                GameRenderer.Write(
+                    textEl.GetRendererConfig().TEXT,
+                    new Point(textX + (int)offset.X, textY + (int)offset.Y),
+                    textEl.GetRendererConfig().COLOR * alpha
+                );
+            }
         }
         
-        SpriteBatch.Draw(PIXEL,
-            new Rectangle(ELEMENT.GetPosition().X + (int)offset.X, ELEMENT.GetPosition().Y + (int)offset.Y, ELEMENT.SIZE_X, ELEMENT.SIZE_Y),
-            ELEMENT.GetRendererConfig().COLOR * alpha);
+    }
+
+    private static void DrawHoverOverlay(GameElement ELEMENT, Vector2 offset = default)
+    {
+        var rect = new Rectangle(
+            ELEMENT.GetRectangle().X + (int)offset.X,
+            ELEMENT.GetRectangle().Y + (int)offset.Y,
+            ELEMENT.GetRectangle().Width,
+            ELEMENT.GetRectangle().Height);
+
+        int s = 24;
+        int p = s * 2;
+        Texture2D texture = LoadTexture("UI/Windows/tile_select");
+
+        Rectangle[] src = new Rectangle[9]
+        {
+            new(0,     0, s, s), new(s,     0, s, s), new(s * 2, 0, s, s),
+            new(0,     s, s, s), new(s,     s, s, s), new(s * 2, s, s, s),
+            new(0, s * 2, s, s), new(s, s * 2, s, s), new(s * 2, s * 2, s, s),
+        };
+
+        int iW = rect.Width  - p * 2;
+        int iH = rect.Height - p * 2;
+        int r  = rect.X + rect.Width  - p;
+        int b  = rect.Y + rect.Height - p;
+
+        Rectangle[] dst = new Rectangle[9]
+        {
+            new(rect.X,     rect.Y,     p,  p),  new(rect.X + p, rect.Y,     iW, p),  new(r, rect.Y,     p,  p),
+            new(rect.X,     rect.Y + p, p,  iH), new(rect.X + p, rect.Y + p, iW, iH), new(r, rect.Y + p, p,  iH),
+            new(rect.X,     b,          p,  p),  new(rect.X + p, b,          iW, p),  new(r, b,          p,  p),
+        };
+
+        for (int i = 0; i < 9; i++)
+            SpriteBatch.Draw(texture, dst[i], src[i], Color.White);
     }
 
     private static void DrawTexture(GameElement ELEMENT, Vector2 offset = default)
@@ -193,24 +261,32 @@ public static class GameRenderer
 
         if(ENTITY is PokemonEntity)
         {
-
             PokemonEntity pkm = ENTITY as PokemonEntity;
             int barW = (int)(dest.Width * 0.7f);
             int barH = 6;
             int barX = dest.X + (dest.Width - barW) / 2;
             int barY = dest.Y - barH - 6;
-
-            int totalBarsH = barH + 3 + barH;
+            int totalBarsH  = barH + 3 + barH;
             int barsMiddleY = barY + totalBarsH / 2;
 
             float hpPercent = Math.Clamp(pkm.POKEMON.HP / (float)pkm.POKEMON.MAX_HP, 0f, 1f);
             SpriteBatch.Draw(PIXEL, new Rectangle(barX, barY, barW, barH), Color.Black);
             SpriteBatch.Draw(PIXEL, new Rectangle(barX, barY, (int)(barW * hpPercent), barH), new Color(180, 60, 60));
 
-            int xpBarY      = barY + barH + 3;
-            float xpPercent = Math.Clamp(pkm.POKEMON.XP / (float)pkm.POKEMON.XPToNextLevel(), 0f, 1f);
-            SpriteBatch.Draw(PIXEL, new Rectangle(barX, xpBarY, barW, barH), Color.Black);
-            SpriteBatch.Draw(PIXEL, new Rectangle(barX, xpBarY, (int)(barW * xpPercent), barH), new Color(60, 100, 220));
+            int secondBarY = barY + barH + 3;
+
+            if(GameGlobals.GAME_STARTED)
+            {
+                float specialPercent = Math.Clamp(pkm.POKEMON.SPECIAL_COUNTER / (float)pkm.POKEMON.SPECIAL_MAX, 0f, 1f);
+                SpriteBatch.Draw(PIXEL, new Rectangle(barX, secondBarY, barW, barH), Color.Black);
+                SpriteBatch.Draw(PIXEL, new Rectangle(barX, secondBarY, (int)(barW * specialPercent), barH), new Color(220, 190, 40));
+            }
+            else
+            {
+                float xpPercent = Math.Clamp(pkm.POKEMON.XP / (float)pkm.POKEMON.XPToNextLevel(), 0f, 1f);
+                SpriteBatch.Draw(PIXEL, new Rectangle(barX, secondBarY, barW, barH), Color.Black);
+                SpriteBatch.Draw(PIXEL, new Rectangle(barX, secondBarY, (int)(barW * xpPercent), barH), new Color(60, 100, 220));
+            }
 
             int iconSize = 20;
             int iconX    = barX - iconSize - 4;
@@ -223,7 +299,6 @@ public static class GameRenderer
             int lvlX = barX + barW + 4;
             int lvlY = barsMiddleY - (int)(lvlSize.Y / 2);
             SpriteBatch.DrawString(GAME_FONT, lvlText, new Vector2(lvlX, lvlY), Color.White);
-            
         }
 
     }
@@ -247,6 +322,37 @@ public static class GameRenderer
 
         GameRenderer.SpriteBatch.End();
     }
+    
+    public static void RenderEffects()
+    {
+        GameRenderer.SpriteBatch.Begin(samplerState: SamplerState.PointClamp);
+
+        foreach (GameEffect effect in GameEffect.EFFECTS)
+        {
+            if (effect.PATH == null) continue;
+            if (effect.FRAMES <= 0) continue;
+
+            Texture2D texture = LoadTexture(effect.PATH);
+
+            int frameW = texture.Width;
+            int frameH = texture.Height / effect.FRAMES;
+            int frameIndex = Math.Clamp(effect._currentIndex, 0, effect.FRAMES - 1);
+
+            const int SCALE = 3;
+
+            Rectangle src  = new Rectangle(0, frameIndex * frameH, frameW, frameH);
+            Rectangle dest = new Rectangle(
+                effect.X - (frameW * SCALE) / 2,
+                effect.Y - (frameH * SCALE) / 2,
+                frameW * SCALE,
+                frameH * SCALE);
+
+            SpriteBatch.Draw(texture, dest, src, Color.White);
+        }
+
+        GameRenderer.SpriteBatch.End();
+    }
+    
     #endregion
 
     #region LOGIC
