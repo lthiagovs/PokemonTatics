@@ -1,4 +1,5 @@
 using ENGINE.MODELS;
+using GAME.CORE;
 using Microsoft.Xna.Framework;
 
 public class PokemonEntity : GameEntity
@@ -11,6 +12,10 @@ public class PokemonEntity : GameEntity
     public bool DEAD = false;
     private PokemonEntity TARGET = null;
     public Point START;
+
+    private double _hoverElapsed = 0;
+    private const double HOVER_DELAY = 0.5;
+    GameHint HINT = null;
 
     public static PokemonEntity Copy(PokemonEntity SOURCE)
     {
@@ -35,6 +40,38 @@ public class PokemonEntity : GameEntity
         var cfg = this.GetEntityConfig();
         int realSize = cfg.SLICE_SIZE * cfg.SIZE;
         return new Rectangle(this.GetPosition().X, this.GetPosition().Y, realSize, realSize);
+    }
+
+    public override void Update()
+    {
+        base.Update();
+        if (this.GetRectangle().Intersects(GameMouse.GetRectangle()))
+        {
+            if(this.EFFECT==null ) { this.SetEffect(new RenderEffect(RenderEffectType.FADE_OUT, 0.3f, 0.1f)); }
+            _hoverElapsed += GameTimeLogic.DELTA;
+            if(_hoverElapsed >= HOVER_DELAY)
+            {   
+                if(POKEMON!=null && HINT==null)
+                {
+                    this.HINT = new GameHint(this.POKEMON.BuildPokemonHint());
+                }
+
+                if(HINT!=null) this.HINT.VISIBLE = true;
+                if(!GameMouse.IsCarryElement()) GameMouse.SetCarryElement(HINT);
+            }
+        }
+        else
+        {
+
+            if(GameMouse.GetCarryElement() == HINT) 
+            {
+                GameMouse.ClearCarryElement();
+                _hoverElapsed = 0;
+                if(this.HINT!=null) this.HINT.Hide();
+            }
+                    
+        }
+
     }
     
 
