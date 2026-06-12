@@ -200,6 +200,36 @@
 /processorParam:TextureFormat=Color
 /build:Pokemons/Venusaur/portrait.png
 
+#begin Songs/MAIN.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/processorParam:Quality=Best
+/build:Songs/MAIN.mp3
+
+#begin Songs/TITLE.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/processorParam:Quality=Best
+/build:Songs/TITLE.mp3
+
+#begin Sounds/HIT.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/HIT.wav
+
+#begin Sounds/LEVEL.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/LEVEL.wav
+
+#begin Sounds/VICTORY.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/VICTORY.wav
+
 #begin UI/Icons/hp.png
 /importer:TextureImporter
 /processor:TextureProcessor
