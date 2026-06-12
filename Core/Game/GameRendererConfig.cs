@@ -7,6 +7,7 @@ public class GameRendererConfig
 {
     public Color COLOR = Color.White;
     public String TEXT = null;
+    public bool IS_HOVERING = false;
     public String TEXTURE_PATH = null;
     public Rectangle? RECTANGLE = null;
     public bool IS_SLICE = false;
