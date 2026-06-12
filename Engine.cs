@@ -50,6 +50,7 @@ public class Engine : Game
         GameDeck.Initialize();
         GameTable.InitializeEnemyTeam();
         TitleScreen.Initialize();
+        GameBonus.Initialize();
 
         //TESTS
 
@@ -73,9 +74,13 @@ public class Engine : Game
         //GameRenderer.Update(GameTableElement.GetTableElements());
         GameMouse.Update();
         GameDeck.Update();
+        GameEffect.UpdateAll();
+        GameRenderer.Update(GameBonus.GetBonusElements());
+        GameBonus.Update();
         
         //LOGIC
         GameTableLogic.Update();
+    
 
         base.Update(gameTime);
     }
@@ -92,6 +97,8 @@ public class Engine : Game
             GameRenderer.Render(GameDeck.GetDeck());
             GameRenderer.Render(GameTableElement.GetTableElements());
             GameRenderer.Render(GameMouse.GetCarryElement());
+            GameRenderer.RenderEffects();
+            GameRenderer.Render(GameBonus.GetBonusElements());
         }
 
         base.Draw(gameTime);

@@ -9,6 +9,11 @@ public class GameCardElement : GameInterfaceElement
 
     private PokemonEntity POKEMON_ENTITY = null;
 
+    private double _hoverElapsed = 0;
+    private const double HOVER_DELAY = 0.5;
+
+    GameHint HINT = null;
+
     public GameCardElement(short POS_X, short POS_Y, short SIZE_X, short SIZE_Y, bool VISIBLE, GameInterfaceElement PARENT = null) 
     : base(POS_X, POS_Y, SIZE_X, SIZE_Y, VISIBLE, PARENT) { 
         this.COLOR_STATE = this.GetRendererConfig().COLOR;
@@ -25,7 +30,8 @@ public class GameCardElement : GameInterfaceElement
         cfg.SLICE_SIZE = 32;
         cfg.SIZE = 3;
         cfg.ANIMATION_SPEED = 1;
-
+        this.HINT = new GameHint(POKEMON.BuildPokemonHint());
+        this.HINT.VISIBLE = false;
         this.POKEMON_ENTITY.SetEntityConfig(cfg);
     }
 
@@ -40,8 +46,17 @@ public class GameCardElement : GameInterfaceElement
         if(this.GetRectangle().Intersects(GameMouse.GetRectangle())) {
             
             // HOVER
-            if(this.CONFIG.IsHover()) { this.RENDER_CONFIG.COLOR = Color.White * 0.5f; }
+            if(this.CONFIG.IsHover()) { 
+                this.RENDER_CONFIG.COLOR = Color.White * 0.5f; 
+                _hoverElapsed += GameTimeLogic.DELTA;
+                if(_hoverElapsed >= HOVER_DELAY)
+                {
+                    this.HINT.VISIBLE = true;
+                    if(!GameMouse.IsCarryElement()) GameMouse.SetCarryElement(HINT);
+                }
 
+            }
+            
             //DRAG
             if(GameMouse.LeftPressed() && !GameMouse.IsCarryElement())
             {
@@ -59,6 +74,17 @@ public class GameCardElement : GameInterfaceElement
                 GameMouse.SetCarryElement(_carry);
             }
 
+        }
+        else
+        {
+
+            if(GameMouse.GetCarryElement() == HINT) 
+            {
+                GameMouse.ClearCarryElement();
+                _hoverElapsed = 0;
+                this.HINT.Hide();
+            }
+                    
         }
 
     }

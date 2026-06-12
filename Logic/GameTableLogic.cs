@@ -136,10 +136,14 @@ public static class GameTableLogic
             return; 
         }
 
+        POKEMON.SetAnimation(null);
+
         POKEMON.IS_MOVING = true;
 
         int dx = POKEMON.GetTarget().GetPosition().X - POKEMON.GetPosition().X;
         int dy = POKEMON.GetTarget().GetPosition().Y - POKEMON.GetPosition().Y;
+
+        POKEMON.POKEMON.ChargeAttack(1);
 
         int moveX = dx == 0 ? 0 : (dx > 0 ? 1 : -1);
         int moveY = dy == 0 ? 0 : (dy > 0 ? 1 : -1);
@@ -201,6 +205,17 @@ public static class GameTableLogic
         GameTableLogic.FaceTarget(POKEMON);
         POKEMON.SetAnimation(new GameAnimation { FRAMES = new[] { 2, 1, 0, 1 }, FRAME_SPEED = 0.06f, LOOP = false });
         POKEMON.POKEMON.Attack(POKEMON.GetTarget().POKEMON);
+
+        if (POKEMON.POKEMON.SPECIAL_EFFECT)
+        {
+            POKEMON.POKEMON.SPECIAL_EFFECT = false;
+
+            Point targetPos = POKEMON.GetTarget().GetPosition();
+
+            GameEffect effect = new GameEffect(GameEffectType.TARGET, 0, 10, POKEMON.ENEMY, 
+            targetPos.X, targetPos.Y, $"Effects/{POKEMON.POKEMON.EFFECT}", 4, POKEMON.GetTarget());
+        }
+
         POKEMON.GetTarget().SetEffect(new RenderEffect(RenderEffectType.FLASH, 0.3f));
         if(POKEMON.GetTarget().POKEMON.HP <= 0) KillPokemon(POKEMON.GetTarget());
     }
@@ -230,11 +245,15 @@ public static class GameTableLogic
         GameTableLogic.GetAllPokemons().ForEach(e => e.IS_MOVING = false);
         GameTableLogic.GetAllPokemons().ForEach(e => e.DEAD = false);
         GameTableLogic.GetAllPokemons().ForEach(e => e.VISIBLE = true);
+        GameTableLogic.GetAllPokemons().ForEach(e => e.POKEMON.SPECIAL_COUNTER = 0);
+        GameTableLogic.GetAllPokemons().ForEach(e => e.SetAnimation(null));
+        GameEffect.EFFECTS.Clear();
         GameGlobals.GAME_STARTED = false;
         GameTableLogic.ClearEnemyPokemons();
         GameTable.InitializeEnemyTeam();
         GameGlobals.ChangeMana(+3);
         GameGlobals.LEVEL+=1;
+        GameBonus.Initialize();
     }
 
     private static void ClearEnemyPokemons()

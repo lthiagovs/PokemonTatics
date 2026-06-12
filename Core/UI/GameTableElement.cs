@@ -50,6 +50,7 @@ public class GameTableElement : GameInterfaceElement
     {
 
         this.GetRendererConfig().COLOR = COLOR_STATE;
+        this.GetRendererConfig().IS_HOVERING = false;
 
         if(!this.PLAYER_OWN) return;
 
@@ -59,12 +60,13 @@ public class GameTableElement : GameInterfaceElement
             // HOVER
             if(this.CONFIG.IsHover()) 
             { 
-                this.RENDER_CONFIG.COLOR = Color.Black * 0.7f;
+                this.GetRendererConfig().IS_HOVERING = true;
             }
 
             //PLACE POKEMON
             if(GameMouse.LeftPressed() && GameMouse.IsCarryElement() && PLAYER_OWN)
             {
+                if(GameGlobals.GAME_STARTED) return;
                 if(!(GameMouse.GetCarryElement() is PokemonEntity)) return;
                 if(this.POKEMON_ENTITY!!=null) return;
                 PokemonEntity _source = GameMouse.GetCarryElement() as PokemonEntity;
@@ -98,6 +100,7 @@ public class GameTableElement : GameInterfaceElement
                 TABLE_ELEMENTS.Remove(this.POKEMON_ENTITY);
                 this.POKEMON_ENTITY = null;
             }
+            return;
 
         }
 
