@@ -111,7 +111,7 @@ public class Pokemon
         }
     }
 
-    private void LevelUp()
+    public void LevelUp()
     {
         LEVEL++;
         float growth = 1.10f;
