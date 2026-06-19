@@ -20,6 +20,8 @@ public static class GameGlobals{
         if(GameGlobals.PLAYER_HP < 0)   GameGlobals.PLAYER_HP = 0;
     }
 
+    public static int GetTableSize() { return (int) 1+(LEVEL/5); }
+
 }
 
 public enum GameState

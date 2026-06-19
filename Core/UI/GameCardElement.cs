@@ -10,7 +10,7 @@ public class GameCardElement : GameInterfaceElement
     private PokemonEntity POKEMON_ENTITY = null;
 
     private double _hoverElapsed = 0;
-    private const double HOVER_DELAY = 0.5;
+    private const double HOVER_DELAY = 1;
 
     GameHint HINT = null;
 
@@ -62,6 +62,18 @@ public class GameCardElement : GameInterfaceElement
             {
 
                 if(POKEMON_ENTITY.POKEMON.COST > GameGlobals.PLAYER_MANA) return;
+
+                if(GameTableLogic.GetPlayerPokemon(this.POKEMON_ENTITY.POKEMON.NAME)!=null)
+                {
+                        GameTableLogic.GetPlayerPokemon(this.POKEMON_ENTITY.POKEMON.NAME).POKEMON.LevelUp();
+                        GameGlobals.ChangeMana(POKEMON_ENTITY.POKEMON.COST*-1);
+                        return;
+                }
+
+                if(GameGlobals.GAME_STARTED) return;
+
+                //TABLE LIMIT
+                if (GameTableLogic.GetPlayerPokemonsCount() >= GameGlobals.GetTableSize()) return;
 
                 GameGlobals.ChangeMana(POKEMON_ENTITY.POKEMON.COST*-1);
 

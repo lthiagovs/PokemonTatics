@@ -50,7 +50,17 @@ public static class GameMouse{
     public static void Update()
     {
         if(GameMouse.CARRY_ELEMENT != null) CARRY_ELEMENT.SetPosition(GameMouse.GetPos());
-        if(GameMouse.RightPressed()) GameMouse.ClearCarryElement();
+
+        //SELL
+        if(GameMouse.RightPressed()) {
+            
+            if(GameMouse.GetCarryElement() is PokemonEntity pe)
+            {
+                GameGlobals.ChangeMana(pe.POKEMON.COST);
+            }
+
+            GameMouse.ClearCarryElement();
+        }
         _previousState = Mouse.GetState();
     }
 

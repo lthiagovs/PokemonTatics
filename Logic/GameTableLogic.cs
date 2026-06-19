@@ -73,9 +73,19 @@ public static class GameTableLogic
         return GameTableLogic.GetAllLivePokemons().FindAll(p => p.ENEMY);
     }
 
-    private static List<PokemonEntity> GetPlayerPokemons()
+    public static List<PokemonEntity> GetPlayerPokemons()
     {
         return GameTableLogic.GetAllLivePokemons().FindAll(p => !p.ENEMY);
+    }
+
+    public static int GetPlayerPokemonsCount()
+    {
+        return GameTableLogic.GetAllLivePokemons().FindAll(p => !p.ENEMY).Count;
+    }
+
+    public static PokemonEntity GetPlayerPokemon(String NAME)
+    {
+        return GameTableLogic.GetAllLivePokemons().Find(p => !p.ENEMY && p.POKEMON.NAME.Equals(NAME));
     }
 
     private static int GetDistanceOverhaul(Point P1, Point P2)

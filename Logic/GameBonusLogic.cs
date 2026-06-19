@@ -8,7 +8,7 @@ public static class GameBonusLogic
     {
         if (GameTable.TABLE_ELEMENTS == null) return 0;
 
-        int count = GameTableElement.GetTableElements()
+        int count = GameTableLogic.GetPlayerPokemons()
             .FindAll(p => p is PokemonEntity pi && pi.POKEMON != null && pi.POKEMON.TYPE == TYPE).Count;
 
         return count;

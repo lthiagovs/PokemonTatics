@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using ENGINE.MODELS;
 using GAME.CORE;
+using GAME.UI;
 using Microsoft.Xna.Framework;
 
 namespace GAME.TABLE;
@@ -23,6 +24,10 @@ public static class GameBonus
     public static void Initialize()
     {
         BONUS_ELEMENTS.Clear();
+
+        var cardName = new GameInterfaceElement(20,  20, 100, 100, true);
+            cardName.SetRendererConfig(new GameRendererConfig(Color.White, $"TABLE SIZE: {GameGlobals.GetTableSize()}", null, Rectangle.Empty, false));
+        BONUS_ELEMENTS.Add(cardName);
 
         int currentRow = 0;
 
