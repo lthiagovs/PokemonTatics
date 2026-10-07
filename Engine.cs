@@ -19,18 +19,17 @@ public class Engine : Game
 
     private int _lastWidth;
     private int _lastHeight;
+    private bool _ready;
 
     public Engine()
     {
-        _graphics = new GraphicsDeviceManager(this);
+        _graphics = new GraphicsDeviceManager(this) { HardwareModeSwitch = false };
 
         GameSettings.Load();
 
         DisplayMode screen = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode;
         _graphics.PreferredBackBufferWidth  = screen.Width;
         _graphics.PreferredBackBufferHeight = screen.Height;
-        _graphics.IsFullScreen = GameSettings.FULLSCREEN;
-        GameHost.FULLSCREEN = GameSettings.FULLSCREEN;
 
         Window.AllowUserResizing = true;
         Window.ClientSizeChanged += OnClientSizeChanged;
@@ -77,6 +76,9 @@ public class Engine : Game
 
         _lastWidth  = GameRenderer.GetScreenWidth();
         _lastHeight = GameRenderer.GetScreenHeight();
+        _ready = true;
+
+        if (GameSettings.FULLSCREEN) GameHost.ToggleFullscreen();
     }
 
     private static void BuildLayout()
@@ -89,6 +91,8 @@ public class Engine : Game
 
     private void OnClientSizeChanged(object? sender, System.EventArgs e)
     {
+        if (!_ready || GraphicsDevice == null) return;
+
         int width  = GraphicsDevice.Viewport.Width;
         int height = GraphicsDevice.Viewport.Height;
         if (width <= 0 || height <= 0) return;
