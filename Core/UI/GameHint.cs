@@ -1,74 +1,48 @@
 using System;
 using Microsoft.Xna.Framework;
-using GAME.CORE;
-using GAME.UI;
+using PokemonTFT.Core;
 
-public class GameHint : GameInterfaceElement
+namespace PokemonTFT.UI;
+
+public sealed class GameHint : GameInterfaceElement
 {
-    private const short PADDING_X = 10;
-    private const short PADDING_Y = 6;
-    private const short MIN_WIDTH  = 60*3;
-    private const short MIN_HEIGHT = 24*3;
+    private const int PADDING_X = 10;
+    private const int PADDING_Y = 6;
+    private const int MIN_WIDTH  = 60 * 3;
+    private const int MIN_HEIGHT = 24 * 3;
+    private const int CURSOR_OFFSET = 16;
 
-    public GameInterfaceElement _textElement;
+    private readonly GameInterfaceElement _text;
+    private string _current = string.Empty;
 
-    public GameHint(string text = "") : base(0, 0, MIN_WIDTH, MIN_HEIGHT, true)
+    public GameHint() : base(0, 0, MIN_WIDTH, MIN_HEIGHT, VISIBLE: false)
     {
+        SetRendererConfig(GameRendererConfig.NineSlice("UI/Windows/card", SLICE_SIZE: 24, SLICE_PROPORTION: 2));
 
-        SetRendererConfig(new GameRendererConfig(Color.White, null, "UI/Windows/card", Rectangle.Empty, true)
-        {
-            SLICE_SIZE = 24,
-            SLICE_PROPORTION = 2
-        });
-
-        _textElement = new GameInterfaceElement(0, 0, 0, 0, false);
-        _textElement.PARENT = this;
-        Point mousePos = GameMouse.GetPos();
-        //SetPosition(new Point(mousePos.X + 16, mousePos.Y + 16));
-
-        _textElement.SetRendererConfig(new GameRendererConfig(Color.White, "", null, Rectangle.Empty, false));
-
-        SetText(text);
+        _text = new GameInterfaceElement(0, 0, 0, 0, VISIBLE: true, PARENT: this);
+        _text.SetRendererConfig(GameRendererConfig.Label(string.Empty));
+        AddChild(_text);
     }
 
-    public string TEXT
+    public void SetText(string TEXT)
     {
-        get => _textElement.GetRendererConfig().TEXT;
-        set => SetText(value);
+        TEXT ??= string.Empty;
+        if (TEXT == _current) return;
+        _current = TEXT;
+
+        Vector2 measured = GameRenderer.GetGameFont().MeasureString(TEXT);
+        SIZE_X = Math.Max(MIN_WIDTH,  (int)measured.X + PADDING_X * 2);
+        SIZE_Y = Math.Max(MIN_HEIGHT, (int)measured.Y + PADDING_Y * 2);
+
+        _text.SIZE_X = (int)measured.X;
+        _text.SIZE_Y = (int)measured.Y;
+        _text.SetPosition(new Point((SIZE_X - (int)measured.X) / 2, (SIZE_Y - (int)measured.Y) / 2));
+        _text.GetRendererConfig().TEXT = TEXT;
     }
 
-    public void SetText(string text)
+    public void FollowMouse()
     {
-        text ??= "";
-        Vector2 measured = GameRenderer.GetGameFont().MeasureString(text);
-        SIZE_X = (short)Math.Max(MIN_WIDTH,  measured.X + PADDING_X * 2);
-        SIZE_Y = (short)Math.Max(MIN_HEIGHT, measured.Y + PADDING_Y * 2);
-
-        // Offset relativo ao container, sempre baseado em (0,0)
-        int textX = (SIZE_X - (int)measured.X) / 2;
-        int textY = (SIZE_Y - (int)measured.Y) / 2;
-        _textElement.SetPosition(new Point(textX, textY));
-        _textElement.GetRendererConfig().TEXT = text;
-    }
-    
-    public override void Update()
-    {
-        Point mousePos = GameMouse.GetPos();
-        SetPosition(new Point(mousePos.X + 16, mousePos.Y + 16));
-    }
-
-    public void Show(System.Collections.Generic.List<GameElement> list)
-    {
-        Update();
-        VISIBLE = true;
-        _textElement.VISIBLE = true;
-        if (!list.Contains(this))         list.Add(this);
-        if (!list.Contains(_textElement)) list.Add(_textElement);
-    }
-
-    public void Hide()
-    {
-        VISIBLE = false;
-        _textElement.VISIBLE = false;
+        Point mouse = GameMouse.GetPos();
+        SetPosition(new Point(mouse.X + CURSOR_OFFSET, mouse.Y + CURSOR_OFFSET));
     }
 }

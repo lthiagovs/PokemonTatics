@@ -1,43 +1,66 @@
 using Microsoft.Xna.Framework;
 
+namespace PokemonTFT.Logic;
+
 public static class GameTimeLogic
 {
-    private static double _elapsed     = 0;
-    private static double _elapsedFrac = 0;
-    private static int    _lastTick     = -1;
-    private static int    _lastFrac     = -1;
+    private const double FRAC_INTERVAL = 0.1;
+    private const int FRAC_PER_SECOND  = 10;
 
-    public static int    TICK  = 0;
-    public static int    FRAC  = 0;
-    public static double TOTAL = 0;
+    private static double _elapsedSecond;
+    private static double _elapsedFrac;
 
-    public static bool FRAC_TICK  = false;
-    public static bool SEC_TICK   = false;
-    public static double DELTA = 0;
+    public static int TICK { get; private set; }
+    public static int FRAC { get; private set; }
+    public static double TOTAL { get; private set; }
+    public static double DELTA { get; private set; }
 
-    public static void Update(GameTime gameTime)
+    public static bool SEC_TICK { get; private set; }
+
+    public static bool FRAC_TICK { get; private set; }
+
+    public static void Update(GameTime GAME_TIME)
     {
-        DELTA = gameTime.ElapsedGameTime.TotalSeconds;
-        TOTAL        += DELTA;
-        _elapsed     += DELTA;
-        _elapsedFrac += DELTA;
+        DELTA = GAME_TIME.ElapsedGameTime.TotalSeconds;
+        TOTAL += DELTA;
+        _elapsedSecond += DELTA;
+        _elapsedFrac   += DELTA;
 
         SEC_TICK  = false;
         FRAC_TICK = false;
 
-        if(_elapsed >= 1.0)     { _elapsed -= 1.0;     TICK = (TICK + 1) % 60; SEC_TICK  = true; }
-        if(_elapsedFrac >= 0.1) { _elapsedFrac -= 0.1; FRAC = (FRAC + 1) % 10; FRAC_TICK = true; }
+        if (_elapsedSecond >= 1.0)
+        {
+            _elapsedSecond -= 1.0;
+            TICK = (TICK + 1) % 60;
+            SEC_TICK = true;
+        }
+
+        if (_elapsedFrac >= FRAC_INTERVAL)
+        {
+            _elapsedFrac -= FRAC_INTERVAL;
+            FRAC = (FRAC + 1) % FRAC_PER_SECOND;
+            FRAC_TICK = true;
+        }
     }
 
-    public static bool OnTick(int every = 1)
+    public static bool OnSecondBoundary() => FRAC_TICK && FRAC == 0;
+
+    #region HIT STOP
+    private static double _freezeLeft;
+
+    public static void RequestFreeze(double SECONDS)
+        => _freezeLeft = System.Math.Max(_freezeLeft, SECONDS);
+
+    public static bool COMBAT_FROZEN => _freezeLeft > 0;
+
+    public static void TickFreeze()
     {
-        if(TICK % every == 0 && TICK != _lastTick) { _lastTick = TICK; return true; }
-        return false;
+        if (_freezeLeft <= 0) return;
+        _freezeLeft -= DELTA;
+        if (_freezeLeft < 0) _freezeLeft = 0;
     }
 
-    public static bool OnFrac(int every = 1)
-    {
-        if(FRAC % every == 0 && FRAC != _lastFrac) { _lastFrac = FRAC; return true; }
-        return false;
-    }
+    public static void ClearFreeze() => _freezeLeft = 0;
+    #endregion
 }

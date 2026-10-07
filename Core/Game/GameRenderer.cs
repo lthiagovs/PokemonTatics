@@ -1,362 +1,376 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Runtime.Serialization.Formatters;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
+using PokemonTFT.Models;
 
-namespace GAME.CORE;
+namespace PokemonTFT.Core;
 
 public static class GameRenderer
 {
+    private static GraphicsDevice _graphicsDevice = null!;
+    private static SpriteBatch _spriteBatch = null!;
+    private static ContentManager _content = null!;
+    private static SpriteFont _font = null!;
+    private static Texture2D _pixel = null!;
 
-    private static GraphicsDevice GraphicsDevice;
-    private static SpriteBatch SpriteBatch;
-    private static ContentManager ContentManager;
-    private static SpriteFont GAME_FONT;
-    private static Texture2D PIXEL;
+    private static readonly HashSet<string> _missingTextures = [];
+    private static bool _batchOpen;
 
-    //ENTITY
-    public static List<GameElement> ENTITIES = new List<GameElement>();
-
-    //CACHE
-    private static Dictionary<string, Texture2D> _textureCache = new();
-
-    #region HELPERS
-    public static bool InitializeRenderer(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, ContentManager contentManager)
-        {
-            GameRenderer.SpriteBatch = spriteBatch;
-            GameRenderer.GraphicsDevice = graphicsDevice;
-            GameRenderer.ContentManager = contentManager;
-
-            if(GameRenderer.SpriteBatch == null) return false;
-            if(GameRenderer.GraphicsDevice == null) return false;
-
-            GameRenderer.PIXEL = new Texture2D(GameRenderer.GraphicsDevice, 1, 1);
-            GameRenderer.PIXEL.SetData(new[] { Color.White });
-
-            return true;
-        }
-
-    public static int GetScreenWidth() { return GameRenderer.GraphicsDevice.Viewport.Width; }
-
-    public static int GetScreenHeight() { return GameRenderer.GraphicsDevice.Viewport.Height; }
-
-    public static void SetFont(SpriteFont FONT) { GameRenderer.GAME_FONT = FONT; }
-
-    public static SpriteFont GetGameFont() { return GameRenderer.GAME_FONT; }
-    
-    private static Texture2D LoadTexture(string path)
+    #region SETUP
+    public static bool InitializeRenderer(SpriteBatch SPRITE_BATCH, GraphicsDevice GRAPHICS_DEVICE, ContentManager CONTENT)
     {
-        if (!_textureCache.TryGetValue(path, out Texture2D texture))
-        {
-            texture = GameRenderer.ContentManager.Load<Texture2D>(path);
-            _textureCache[path] = texture;
-        }
-        return texture;
+        if (SPRITE_BATCH == null || GRAPHICS_DEVICE == null) return false;
+
+        _spriteBatch    = SPRITE_BATCH;
+        _graphicsDevice = GRAPHICS_DEVICE;
+        _content        = CONTENT;
+
+        _pixel = new Texture2D(GRAPHICS_DEVICE, 1, 1);
+        _pixel.SetData([Color.White]);
+        return true;
     }
 
+    public static int GetScreenWidth()  => _graphicsDevice.Viewport.Width;
+    public static int GetScreenHeight() => _graphicsDevice.Viewport.Height;
+
+    public static void SetFont(SpriteFont FONT) => _font = FONT;
+    public static SpriteFont GetGameFont() => _font;
+
+    private static Texture2D LoadTexture(string PATH)
+    {
+        try
+        {
+            return _content.Load<Texture2D>(PATH);
+        }
+        catch (ContentLoadException)
+        {
+            if (_missingTextures.Add(PATH))
+                Console.Error.WriteLine($"[GameRenderer] textura ausente: {PATH}");
+            return _pixel;
+        }
+    }
+
+    public static Rectangle CoverSource(int TEXTURE_W, int TEXTURE_H, int DEST_W, int DEST_H)
+    {
+        if (TEXTURE_W <= 0 || TEXTURE_H <= 0 || DEST_W <= 0 || DEST_H <= 0)
+            return new Rectangle(0, 0, TEXTURE_W, TEXTURE_H);
+
+        float textureAspect = TEXTURE_W / (float)TEXTURE_H;
+        float destAspect    = DEST_W / (float)DEST_H;
+
+        if (destAspect > textureAspect)
+        {
+            int height = (int)(TEXTURE_W / destAspect);
+            return new Rectangle(0, (TEXTURE_H - height) / 2, TEXTURE_W, height);
+        }
+
+        int width = (int)(TEXTURE_H * destAspect);
+        return new Rectangle((TEXTURE_W - width) / 2, 0, width, TEXTURE_H);
+    }
     #endregion
 
-    #region DRAW
-    private static void Write(string TEXT, Point POSITION, Color COLOR)
+    #region FRAME
+    public static void Begin()
     {
-       GameRenderer.SpriteBatch.DrawString(GameRenderer.GAME_FONT, TEXT, new Vector2(POSITION.X, POSITION.Y), COLOR);
+        if (_batchOpen) return;
+        _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+        _batchOpen = true;
     }
 
-    private static void WriteCustom(string TEXT, Point POSITION, Color COLOR, SpriteFont FONT)
+    public static void End()
     {
-       GameRenderer.SpriteBatch.DrawString(GameRenderer.GAME_FONT, TEXT, new Vector2(POSITION.X, POSITION.Y), COLOR);
+        if (!_batchOpen) return;
+        _spriteBatch.End();
+        _batchOpen = false;
+    }
+    #endregion
+
+    #region RENDER
+    public static void Render(GameElement? ELEMENT)
+    {
+        if (ELEMENT is not { VISIBLE: true }) return;
+
+        Draw(ELEMENT);
+        foreach (GameElement child in ELEMENT.GetChildren()) Render(child);
     }
 
-    private static void Draw(GameElement ELEMENT)
+    public static void Render(IReadOnlyList<GameElement>? ELEMENTS)
     {
-        if(ELEMENT.GetRendererConfig() == null) return;
-        
-        Vector2 offset = ELEMENT.EFFECT?.OFFSET ?? Vector2.Zero;
-        float   alpha  = ELEMENT.EFFECT?.ALPHA  ?? 1f;
-
-        if(ELEMENT is GameEntity) { GameRenderer.DrawEntity(ELEMENT as GameEntity, offset, alpha); return; }
-
-
-        
-        if(ELEMENT.GetRendererConfig().TEXT != null)
-        {
-            GameRenderer.Write(ELEMENT.GetRendererConfig().TEXT,
-                new Point(ELEMENT.GetPosition().X + (int)offset.X, ELEMENT.GetPosition().Y + (int)offset.Y),
-                ELEMENT.GetRendererConfig().COLOR * alpha);
-        }
-        else if(ELEMENT.GetRendererConfig().TEXTURE_PATH != null)
-        {
-            if(ELEMENT.GetRendererConfig().IS_SLICE) GameRenderer.DrawNineSlice(ELEMENT, offset);
-            else GameRenderer.DrawTexture(ELEMENT, offset);
-        }
-        else
-        {
-            SpriteBatch.Draw(PIXEL,
-                new Rectangle(ELEMENT.GetPosition().X + (int)offset.X, ELEMENT.GetPosition().Y + (int)offset.Y, ELEMENT.SIZE_X, ELEMENT.SIZE_Y),
-                ELEMENT.GetRendererConfig().COLOR * alpha);
-        }
-
-        if(ELEMENT.GetRendererConfig().IS_HOVERING)
-            DrawHoverOverlay(ELEMENT, offset);
-
-        if (ELEMENT is GameHint hint)
-        {
-            var textEl = hint._textElement;
-            if (textEl != null && textEl.GetRendererConfig() != null)
-            {
-                Point mousePos = GameMouse.GetPos();
-                
-                int hintX = mousePos.X + 16;
-                int hintY = mousePos.Y + 16;
-                
-                // Texto centralizado no container, calculado na hora
-                Vector2 measured = GameRenderer.GetGameFont().MeasureString(textEl.GetRendererConfig().TEXT ?? "");
-                int textX = (hintX + (hint.SIZE_X - (int)measured.X) / 2) - 16;
-                int textY = (hintY + (hint.SIZE_Y - (int)measured.Y) / 2) - 16;
-
-                GameRenderer.Write(
-                    textEl.GetRendererConfig().TEXT,
-                    new Point(textX + (int)offset.X, textY + (int)offset.Y),
-                    textEl.GetRendererConfig().COLOR * alpha
-                );
-            }
-        }
-        
+        if (ELEMENTS == null) return;
+        for (int i = 0; i < ELEMENTS.Count; i++) Render(ELEMENTS[i]);
     }
 
-    private static void DrawHoverOverlay(GameElement ELEMENT, Vector2 offset = default)
-    {
-        var rect = new Rectangle(
-            ELEMENT.GetRectangle().X + (int)offset.X,
-            ELEMENT.GetRectangle().Y + (int)offset.Y,
-            ELEMENT.GetRectangle().Width,
-            ELEMENT.GetRectangle().Height);
-
-        int s = 24;
-        int p = s * 2;
-        Texture2D texture = LoadTexture("UI/Windows/tile_select");
-
-        Rectangle[] src = new Rectangle[9]
-        {
-            new(0,     0, s, s), new(s,     0, s, s), new(s * 2, 0, s, s),
-            new(0,     s, s, s), new(s,     s, s, s), new(s * 2, s, s, s),
-            new(0, s * 2, s, s), new(s, s * 2, s, s), new(s * 2, s * 2, s, s),
-        };
-
-        int iW = rect.Width  - p * 2;
-        int iH = rect.Height - p * 2;
-        int r  = rect.X + rect.Width  - p;
-        int b  = rect.Y + rect.Height - p;
-
-        Rectangle[] dst = new Rectangle[9]
-        {
-            new(rect.X,     rect.Y,     p,  p),  new(rect.X + p, rect.Y,     iW, p),  new(r, rect.Y,     p,  p),
-            new(rect.X,     rect.Y + p, p,  iH), new(rect.X + p, rect.Y + p, iW, iH), new(r, rect.Y + p, p,  iH),
-            new(rect.X,     b,          p,  p),  new(rect.X + p, b,          iW, p),  new(r, b,          p,  p),
-        };
-
-        for (int i = 0; i < 9; i++)
-            SpriteBatch.Draw(texture, dst[i], src[i], Color.White);
-    }
-
-    private static void DrawTexture(GameElement ELEMENT, Vector2 offset = default)
-    {
-        Texture2D texture = LoadTexture(ELEMENT.GetRendererConfig().TEXTURE_PATH);
-        Rectangle dest = new Rectangle(
-            ELEMENT.GetRectangle().X + (int)offset.X,
-            ELEMENT.GetRectangle().Y + (int)offset.Y,
-            ELEMENT.GetRectangle().Width,
-            ELEMENT.GetRectangle().Height);
-        SpriteBatch.Draw(texture, dest, ELEMENT.GetRendererConfig().RECTANGLE, ELEMENT.GetRendererConfig().COLOR);
-    }
-
-    private static void DrawNineSlice(GameElement ELEMENT, Vector2 offset = default)
-    {
-        var cfg  = ELEMENT.GetRendererConfig();
-        int s    = cfg.SLICE_SIZE;
-        int p    = s * cfg.SLICE_PROPORTION;
-        var rect = ELEMENT.GetRectangle();
-        var dest = new Rectangle(rect.X + (int)offset.X, rect.Y + (int)offset.Y, rect.Width, rect.Height);
-        Texture2D texture = LoadTexture(cfg.TEXTURE_PATH);
-
-        Rectangle[] src = new Rectangle[9]
-        {
-            new(0,     0, s, s), new(s,     0, s, s), new(s * 2, 0, s, s),
-            new(0,     s, s, s), new(s,     s, s, s), new(s * 2, s, s, s),
-            new(0, s * 2, s, s), new(s, s * 2, s, s), new(s * 2, s * 2, s, s),
-        };
-
-        int iW = dest.Width  - p * 2;
-        int iH = dest.Height - p * 2;
-        int r  = dest.X + dest.Width  - p;
-        int b  = dest.Y + dest.Height - p;
-
-        Rectangle[] dst = new Rectangle[9]
-        {
-            new(dest.X,     dest.Y,     p,  p),  new(dest.X + p, dest.Y,     iW, p),  new(r, dest.Y,     p,  p),
-            new(dest.X,     dest.Y + p, p,  iH), new(dest.X + p, dest.Y + p, iW, iH), new(r, dest.Y + p, p,  iH),
-            new(dest.X,     b,          p,  p),  new(dest.X + p, b,          iW, p),  new(r, b,          p,  p),
-        };
-
-        for (int i = 0; i < 9; i++)
-            SpriteBatch.Draw(texture, dst[i], src[i], cfg.COLOR);
-    }
-
-    private static void DrawShadow(Rectangle dest, GameEntityRenderConfig cfg)
-    {
-        int shadowW = 23 * cfg.SIZE;
-        int shadowH = 8  * cfg.SIZE;
-        int shadowX = dest.X + (dest.Width - shadowW) / 2;
-        int shadowY = dest.Y + (int)(dest.Height * 0.80f) - shadowH / 2 - 20;
-        Texture2D shadow = LoadTexture("Environment/shadow");
-        SpriteBatch.Draw(shadow, new Rectangle(shadowX, shadowY, shadowW, shadowH), new Rectangle(0, 0, 23, 8), Color.Black * 0.4f);
-    }
-
-    private static void DrawEntity(GameEntity ENTITY, Vector2 offset = default, float alpha = 1f)
-    {
-        var cfg   = ENTITY.GetEntityConfig();
-        int s     = cfg.SLICE_SIZE;
-        int frame = ENTITY.IS_MOVING ? ENTITY.GetFrame() : 0;
-        bool flip = false;
-        int row;
-        switch (ENTITY.DIRECTION)
-        {
-            case GameDirection.BOTTOM:       row = 0; break;
-            case GameDirection.TOP:          row = 1; break;
-            case GameDirection.LEFT:         row = 2; break;
-            case GameDirection.RIGHT:        row = 2; flip = true; break;
-            case GameDirection.TOP_LEFT:     row = 3; break;
-            case GameDirection.TOP_RIGHT:    row = 3; flip = true; break;
-            case GameDirection.BOTTOM_LEFT:  row = 4; break;
-            case GameDirection.BOTTOM_RIGHT: row = 4; flip = true; break;
-            default:                         row = 0; break;
-        }
-
-        int col;
-        if(ENTITY.IsAnimated())
-            col = ENTITY.GetAnimation().GetFrame();
-        else if(!ENTITY.IS_MOVING)
-            col = 1;
-        else
-        {
-            int[] frameOrder = { 1, 0, 1, 2 };
-            col = frameOrder[frame % 4];
-        }
-
-        Rectangle src  = new Rectangle(col * s, row * s, s, s);
-        Rectangle dest = new Rectangle(
-            ENTITY.GetRectangle().X + (int)offset.X,
-            ENTITY.GetRectangle().Y + (int)offset.Y,
-            s * cfg.SIZE, s * cfg.SIZE);
-
-        Texture2D texture  = LoadTexture(cfg.TEXTURE_PATH);
-        SpriteEffects sfx  = flip ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
-        Color tint         = (ENTITY.EFFECT?.TINT ?? Color.White) * alpha;
-
-        DrawShadow(dest, cfg);
-        SpriteBatch.Draw(texture, dest, src, tint, 0f, Vector2.Zero, sfx, 0f);
-
-        if(ENTITY is PokemonEntity)
-        {
-            PokemonEntity pkm = ENTITY as PokemonEntity;
-            int barW = (int)(dest.Width * 0.7f);
-            int barH = 6;
-            int barX = dest.X + (dest.Width - barW) / 2;
-            int barY = dest.Y - barH - 6;
-            int totalBarsH  = barH + 3 + barH;
-            int barsMiddleY = barY + totalBarsH / 2;
-
-            float hpPercent = Math.Clamp(pkm.POKEMON.HP / (float)pkm.POKEMON.MAX_HP, 0f, 1f);
-            SpriteBatch.Draw(PIXEL, new Rectangle(barX, barY, barW, barH), Color.Black);
-            SpriteBatch.Draw(PIXEL, new Rectangle(barX, barY, (int)(barW * hpPercent), barH), new Color(180, 60, 60));
-
-            int secondBarY = barY + barH + 3;
-
-            if(GameGlobals.GAME_STARTED)
-            {
-                float specialPercent = Math.Clamp(pkm.POKEMON.SPECIAL_COUNTER / (float)pkm.POKEMON.SPECIAL_MAX, 0f, 1f);
-                SpriteBatch.Draw(PIXEL, new Rectangle(barX, secondBarY, barW, barH), Color.Black);
-                SpriteBatch.Draw(PIXEL, new Rectangle(barX, secondBarY, (int)(barW * specialPercent), barH), new Color(220, 190, 40));
-            }
-            else
-            {
-                float xpPercent = Math.Clamp(pkm.POKEMON.XP / (float)pkm.POKEMON.XPToNextLevel(), 0f, 1f);
-                SpriteBatch.Draw(PIXEL, new Rectangle(barX, secondBarY, barW, barH), Color.Black);
-                SpriteBatch.Draw(PIXEL, new Rectangle(barX, secondBarY, (int)(barW * xpPercent), barH), new Color(60, 100, 220));
-            }
-
-            int iconSize = 20;
-            int iconX    = barX - iconSize - 4;
-            int iconY    = barsMiddleY - iconSize / 2;
-            Texture2D typeIcon = LoadTexture($"UI/Types/{pkm.POKEMON.TYPE.ToString().ToLower()}");
-            SpriteBatch.Draw(typeIcon, new Rectangle(iconX, iconY, iconSize, iconSize), new Rectangle(0, 0, 34, 34), Color.White);
-
-            string lvlText  = $"L{pkm.POKEMON.LEVEL}";
-            Vector2 lvlSize = GAME_FONT.MeasureString(lvlText);
-            int lvlX = barX + barW + 4;
-            int lvlY = barsMiddleY - (int)(lvlSize.Y / 2);
-            SpriteBatch.DrawString(GAME_FONT, lvlText, new Vector2(lvlX, lvlY), Color.White);
-        }
-
-    }
-
-    public static void Render(GameElement ELEMENT)
-    {
-        if(ELEMENT==null) return;
-        GameRenderer.SpriteBatch.Begin(samplerState: SamplerState.PointClamp);
-
-        if(ELEMENT.VISIBLE) GameRenderer.Draw(ELEMENT);
-
-        GameRenderer.SpriteBatch.End();
-    }
-
-    public static void Render(List<GameElement> CUSTOM_LIST)
-    {
-
-        GameRenderer.SpriteBatch.Begin(samplerState: SamplerState.PointClamp);
-
-        foreach(GameElement element in CUSTOM_LIST) if(element.VISIBLE) GameRenderer.Draw(element);
-
-        GameRenderer.SpriteBatch.End();
-    }
-    
     public static void RenderEffects()
     {
-        GameRenderer.SpriteBatch.Begin(samplerState: SamplerState.PointClamp);
-
-        foreach (GameEffect effect in GameEffect.EFFECTS)
+        IReadOnlyList<GameEffect> effects = GameEffect.All;
+        for (int i = 0; i < effects.Count; i++)
         {
-            if (effect.PATH == null) continue;
-            if (effect.FRAMES <= 0) continue;
-
+            GameEffect effect = effects[i];
             Texture2D texture = LoadTexture(effect.PATH);
 
             int frameW = texture.Width;
             int frameH = texture.Height / effect.FRAMES;
-            int frameIndex = Math.Clamp(effect._currentIndex, 0, effect.FRAMES - 1);
+            int frame  = Math.Clamp(effect.FrameIndex, 0, effect.FRAMES - 1);
 
-            const int SCALE = 3;
+            int drawW = (int)(frameW * effect.SCALE);
+            int drawH = (int)(frameH * effect.SCALE);
 
-            Rectangle src  = new Rectangle(0, frameIndex * frameH, frameW, frameH);
-            Rectangle dest = new Rectangle(
-                effect.X - (frameW * SCALE) / 2,
-                effect.Y - (frameH * SCALE) / 2,
-                frameW * SCALE,
-                frameH * SCALE);
+            var source = new Rectangle(0, frame * frameH, frameW, frameH);
+            var dest   = new Rectangle(effect.X - drawW / 2, effect.Y - drawH / 2, drawW, drawH);
 
-            SpriteBatch.Draw(texture, dest, src, Color.White);
+            _spriteBatch.Draw(texture, dest, FitSource(texture, source), effect.TINT);
+        }
+    }
+
+    public static void RenderFloatingText()
+    {
+        IReadOnlyList<FloatingText> items = FloatingText.All;
+        for (int i = 0; i < items.Count; i++)
+        {
+            FloatingText item = items[i];
+
+            Vector2 position = item.Position;
+            if (item.CENTERED) position.X -= GameFonts.Measure(item.TEXT, item.SCALE).X / 2f;
+
+            DrawString(item.TEXT, position, item.COLOR * item.Alpha, item.SCALE, SHADOW: 2, item.Alpha);
+        }
+    }
+    #endregion
+
+    #region PRIMITIVAS PUBLICAS
+    public static void FillScreen(Color COLOR)
+        => _spriteBatch.Draw(_pixel, new Rectangle(0, 0, GetScreenWidth(), GetScreenHeight()), COLOR);
+
+    public static void DrawRect(Rectangle DEST, Color COLOR) => _spriteBatch.Draw(_pixel, DEST, COLOR);
+
+    public static void DrawSprite(string PATH, Rectangle DEST, Rectangle? SOURCE, Color COLOR, bool FLIP = false)
+    {
+        Texture2D texture = LoadTexture(PATH);
+        _spriteBatch.Draw(texture, DEST, FitSource(texture, SOURCE), COLOR, 0f, Vector2.Zero,
+            FLIP ? SpriteEffects.FlipHorizontally : SpriteEffects.None, 0f);
+    }
+
+    public static void DrawRay(Vector2 CENTER, float ANGLE, float LENGTH, float THICKNESS, Color COLOR)
+        => _spriteBatch.Draw(_pixel, CENTER, null, COLOR, ANGLE,
+            new Vector2(0f, 0.5f), new Vector2(LENGTH, THICKNESS), SpriteEffects.None, 0f);
+
+    public static void DrawCenteredText(string TEXT, float CENTER_X, float Y, Color COLOR, float SCALE, int SHADOW = 3)
+    {
+        Vector2 size = GameFonts.Measure(TEXT, SCALE);
+        DrawString(TEXT, new Vector2(CENTER_X - size.X / 2f, Y), COLOR, SCALE, SHADOW, COLOR.A / 255f);
+    }
+    #endregion
+
+    #region DRAW
+    private static void DrawString(string TEXT, Vector2 POSITION, Color COLOR, float SCALE, int SHADOW, float SHADOW_ALPHA = 1f, Color? SHADOW_COLOR = null)
+    {
+        if (SHADOW > 0)
+        {
+            _spriteBatch.DrawString(_font, TEXT, POSITION + new Vector2(SHADOW, SHADOW),
+                (SHADOW_COLOR ?? Color.Black) * SHADOW_ALPHA, 0f, Vector2.Zero, SCALE, SpriteEffects.None, 0f);
         }
 
-        GameRenderer.SpriteBatch.End();
+        _spriteBatch.DrawString(_font, TEXT, POSITION, COLOR, 0f, Vector2.Zero, SCALE, SpriteEffects.None, 0f);
     }
-    
-    #endregion
 
-    #region LOGIC
-    public static void Update(List<GameElement> CUSTOM_LIST) { foreach(GameElement element in CUSTOM_LIST) element.Update(); }
-    #endregion
+    private static void Draw(GameElement ELEMENT)
+    {
+        GameRendererConfig config = ELEMENT.GetRendererConfig();
 
+        Vector2 offset = (ELEMENT.EFFECT?.OFFSET ?? Vector2.Zero) + ELEMENT.RENDER_OFFSET;
+        float alpha    = (ELEMENT.EFFECT?.ALPHA ?? 1f) * ELEMENT.RENDER_ALPHA;
+
+        if (ELEMENT is GameEntity entity)
+        {
+            DrawEntity(entity, offset, alpha);
+            return;
+        }
+
+        if (config.TEXT != null)
+        {
+            Point position = ELEMENT.GetPosition();
+            DrawString(config.TEXT,
+                new Vector2(position.X + offset.X, position.Y + offset.Y),
+                config.COLOR * alpha,
+                config.FONT_SCALE,
+                config.TEXT_SHADOW,
+                alpha,
+                config.TEXT_SHADOW_COLOR);
+        }
+        else if (config.TEXTURE_PATH != null)
+        {
+            if (config.IS_SLICE) DrawNineSlice(ELEMENT, config, offset, alpha);
+            else DrawTexture(ELEMENT, config, offset, alpha);
+        }
+        else
+        {
+            _spriteBatch.Draw(_pixel, DestRect(ELEMENT, offset), config.COLOR * alpha);
+        }
+
+        if (config.IS_HOVERING)
+            DrawNineSliceRaw("UI/Windows/tile_select", 24, 2, DestRect(ELEMENT, offset), Color.White * alpha);
+    }
+
+    private static Rectangle DestRect(GameElement ELEMENT, Vector2 OFFSET)
+    {
+        Rectangle rect = ELEMENT.GetRectangle();
+        rect = new Rectangle(rect.X + (int)OFFSET.X, rect.Y + (int)OFFSET.Y, rect.Width, rect.Height);
+        return Scaled(rect, DrawScale(ELEMENT));
+    }
+
+    private static float DrawScale(GameElement ELEMENT) => ELEMENT.RENDER_SCALE * (ELEMENT.EFFECT?.SCALE ?? 1f);
+
+    private static Rectangle Scaled(Rectangle RECTANGLE, float SCALE)
+    {
+        if (Math.Abs(SCALE - 1f) < 0.001f) return RECTANGLE;
+
+        int width  = (int)(RECTANGLE.Width  * SCALE);
+        int height = (int)(RECTANGLE.Height * SCALE);
+        return new Rectangle(
+            RECTANGLE.X + (RECTANGLE.Width  - width)  / 2,
+            RECTANGLE.Y + (RECTANGLE.Height - height) / 2,
+            width, height);
+    }
+
+    private static Rectangle? FitSource(Texture2D TEXTURE, Rectangle? SOURCE)
+    {
+        if (SOURCE is not { } source) return null;
+        if (source.Right <= TEXTURE.Width && source.Bottom <= TEXTURE.Height) return source;
+        return null;
+    }
+
+    private static void DrawTexture(GameElement ELEMENT, GameRendererConfig CONFIG, Vector2 OFFSET, float ALPHA)
+    {
+        Texture2D texture = LoadTexture(CONFIG.TEXTURE_PATH!);
+        _spriteBatch.Draw(texture, DestRect(ELEMENT, OFFSET), FitSource(texture, CONFIG.SOURCE), CONFIG.COLOR * ALPHA);
+    }
+
+    private static void DrawNineSlice(GameElement ELEMENT, GameRendererConfig CONFIG, Vector2 OFFSET, float ALPHA) =>
+        DrawNineSliceRaw(CONFIG.TEXTURE_PATH!, CONFIG.SLICE_SIZE, CONFIG.SLICE_PROPORTION,
+            DestRect(ELEMENT, OFFSET), CONFIG.COLOR * ALPHA);
+
+    private static void DrawNineSliceRaw(string PATH, int SLICE_SIZE, int SLICE_PROPORTION, Rectangle DEST, Color COLOR)
+    {
+        if (SLICE_SIZE <= 0) return;
+
+        Texture2D texture = LoadTexture(PATH);
+        int s = SLICE_SIZE;
+
+        if (texture.Width < s * 3 || texture.Height < s * 3)
+        {
+            _spriteBatch.Draw(texture, DEST, COLOR);
+            return;
+        }
+
+        int p = s * Math.Max(1, SLICE_PROPORTION);
+
+        int innerW = DEST.Width  - p * 2;
+        int innerH = DEST.Height - p * 2;
+        int right  = DEST.X + DEST.Width  - p;
+        int bottom = DEST.Y + DEST.Height - p;
+
+        for (int i = 0; i < 9; i++)
+        {
+            int col = i % 3;
+            int row = i / 3;
+
+            var source = new Rectangle(col * s, row * s, s, s);
+            var dest = new Rectangle(
+                col switch { 0 => DEST.X, 1 => DEST.X + p, _ => right },
+                row switch { 0 => DEST.Y, 1 => DEST.Y + p, _ => bottom },
+                col == 1 ? innerW : p,
+                row == 1 ? innerH : p);
+
+            _spriteBatch.Draw(texture, dest, source, COLOR);
+        }
+    }
+
+    private static void DrawShadow(Rectangle DEST, GameEntityRenderConfig CONFIG, float ALPHA)
+    {
+        int shadowW = 23 * CONFIG.SCALE;
+        int shadowH = 8  * CONFIG.SCALE;
+        int shadowX = DEST.X + (DEST.Width - shadowW) / 2;
+        int shadowY = DEST.Y + (int)(DEST.Height * 0.80f) - shadowH / 2 - 20;
+
+        _spriteBatch.Draw(LoadTexture("Environment/shadow"),
+            new Rectangle(shadowX, shadowY, shadowW, shadowH),
+            new Rectangle(0, 0, 23, 8),
+            Color.Black * (0.4f * ALPHA));
+    }
+
+    private static void DrawEntity(GameEntity ENTITY, Vector2 OFFSET, float ALPHA)
+    {
+        GameEntityRenderConfig config = ENTITY.GetEntityConfig();
+        int slice = config.SLICE_SIZE;
+
+        (int row, bool flip) = GameDirectionExtensions.SpriteCell(ENTITY.DIRECTION);
+
+        var source = new Rectangle(ENTITY.GetFrameColumn() * slice, row * slice, slice, slice);
+
+        Rectangle bounds = ENTITY.GetRectangle();
+        var dest = Scaled(new Rectangle(
+            bounds.X + (int)OFFSET.X,
+            bounds.Y + (int)OFFSET.Y,
+            config.DrawSize,
+            config.DrawSize), DrawScale(ENTITY));
+
+        Color tint = (ENTITY.EFFECT?.TINT ?? Color.White) * ALPHA;
+        if (ENTITY is PokemonEntity { HOVERED: true }) tint = Color.Lerp(tint, Color.White, 0.35f);
+
+        Texture2D texture = LoadTexture(config.TEXTURE_PATH);
+
+        DrawShadow(dest, config, ALPHA);
+        _spriteBatch.Draw(texture, dest, FitSource(texture, source), tint, 0f, Vector2.Zero,
+            flip ? SpriteEffects.FlipHorizontally : SpriteEffects.None, 0f);
+
+        if (ENTITY is PokemonEntity { POKEMON: not null, DEAD: false } pokemon) DrawPokemonBars(pokemon, dest, ALPHA);
+    }
+
+    private static void DrawPokemonBars(PokemonEntity ENTITY, Rectangle DEST, float ALPHA)
+    {
+        Pokemon pokemon = ENTITY.POKEMON!;
+
+        const int BAR_H = 6;
+        const int GAP   = 3;
+
+        int barW = (int)(DEST.Width * 0.7f);
+        int barX = DEST.X + (DEST.Width - barW) / 2;
+        int barY = DEST.Y - BAR_H - 6;
+        int middleY = barY + (BAR_H + GAP + BAR_H) / 2;
+
+        Color backdrop = Color.Black * ALPHA;
+
+        float hpPercent = pokemon.MAX_HP > 0 ? Math.Clamp(pokemon.HP / (float)pokemon.MAX_HP, 0f, 1f) : 0f;
+        _spriteBatch.Draw(_pixel, new Rectangle(barX, barY, barW, BAR_H), backdrop);
+        _spriteBatch.Draw(_pixel, new Rectangle(barX, barY, (int)(barW * hpPercent), BAR_H), new Color(180, 60, 60) * ALPHA);
+
+        int secondBarY = barY + BAR_H + GAP;
+        _spriteBatch.Draw(_pixel, new Rectangle(barX, secondBarY, barW, BAR_H), backdrop);
+
+        if (GameGlobals.GAME_STARTED)
+        {
+            float special = pokemon.SPECIAL_MAX > 0
+                ? Math.Clamp(pokemon.SPECIAL_COUNTER / (float)pokemon.SPECIAL_MAX, 0f, 1f) : 0f;
+            _spriteBatch.Draw(_pixel, new Rectangle(barX, secondBarY, (int)(barW * special), BAR_H), new Color(220, 190, 40) * ALPHA);
+        }
+        else
+        {
+            int next = pokemon.XPToNextLevel();
+            float xp = next > 0 ? Math.Clamp(pokemon.XP / (float)next, 0f, 1f) : 0f;
+            _spriteBatch.Draw(_pixel, new Rectangle(barX, secondBarY, (int)(barW * xp), BAR_H), new Color(60, 100, 220) * ALPHA);
+        }
+
+        const int ICON_SIZE = 20;
+        Texture2D icon = LoadTexture(pokemon.IconPath);
+        _spriteBatch.Draw(icon,
+            new Rectangle(barX - ICON_SIZE - 4, middleY - ICON_SIZE / 2, ICON_SIZE, ICON_SIZE),
+            FitSource(icon, new Rectangle(0, 0, 34, 34)), Color.White * ALPHA);
+
+        string level = $"L{pokemon.LEVEL}";
+        Vector2 size = _font.MeasureString(level);
+        DrawString(level, new Vector2(barX + barW + 4, middleY - size.Y / 2), Color.White * ALPHA, GameFonts.SMALL, SHADOW: 1, ALPHA);
+    }
+    #endregion
 }

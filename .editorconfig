@@ -1,0 +1,48 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{json,yml,yaml,mgcb,spritefont,manifest,csproj}]
+indent_size = 2
+
+[*.cs]
+# using
+dotnet_sort_system_directives_first = true
+csharp_using_directive_placement = outside_namespace:warning
+
+# namespace file-scoped (o projeto ja usa esse estilo em parte dos arquivos)
+csharp_style_namespace_declarations = file_scoped:warning
+
+# chaves e espacamento
+csharp_new_line_before_open_brace = all
+csharp_prefer_braces = when_multiline:suggestion
+
+# expressoes
+csharp_style_expression_bodied_methods = when_on_single_line:suggestion
+csharp_style_expression_bodied_properties = when_on_single_line:suggestion
+dotnet_style_prefer_conditional_expression_over_return = false:none
+
+# nulos
+dotnet_diagnostic.CS8600.severity = warning
+dotnet_diagnostic.CS8602.severity = warning
+dotnet_diagnostic.CS8618.severity = warning
+
+# codigo morto: quebrar o build e agressivo demais aqui, mas queremos ver
+dotnet_diagnostic.IDE0051.severity = warning  # membro privado nao usado
+dotnet_diagnostic.IDE0052.severity = warning  # membro privado so escrito
+dotnet_diagnostic.CS0169.severity = warning   # campo nunca usado
+
+# --- convencoes deliberadas deste projeto ---
+# campos e parametros em UPPER_SNAKE, campos publicos em vez de propriedades e
+# estado global mutavel em classes estaticas sao escolhas de estilo do codigo.
+# Ficam desligadas de proposito para que os avisos restantes sejam sinal real.
+dotnet_diagnostic.IDE1006.severity = none
+dotnet_diagnostic.CA1707.severity = none   # sublinhado em nome de membro
+dotnet_diagnostic.CA1051.severity = none   # campo de instancia publico
+dotnet_diagnostic.CA2211.severity = none   # campo estatico publico nao-const

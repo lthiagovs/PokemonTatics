@@ -1,126 +1,83 @@
-using ENGINE.MODELS;
-using GAME.TABLE;
 using System;
+using PokemonTFT.Models;
+
+namespace PokemonTFT.Logic;
 
 public static class GameBonusLogic
 {
-    public static int GetTypeBonusCount(PokemonType TYPE)
+    public static TypeBonusSnapshot SNAPSHOT { get; internal set; } = TypeBonusSnapshot.EMPTY;
+
+    public static int GetTypeBonusCount(PokemonType TYPE) => SNAPSHOT.Count(TYPE);
+
+    public static string GetBonusDescription(PokemonType TYPE) => TYPE switch
     {
-        if (GameTable.TABLE_ELEMENTS == null) return 0;
+        PokemonType.GHOST or PokemonType.DARK => ShadowDescription(),
+        PokemonType.ELECTRIC                  => ElectricDescription(),
+        PokemonType.GRASS                     => GrassDescription(),
+        PokemonType.FIRE                      => FireDescription(),
+        PokemonType.WATER                     => WaterDescription(),
+        PokemonType.ROCK or PokemonType.STEEL => SturdyDescription(),
+        PokemonType.BUG                       => BugDescription(),
+        PokemonType.DRAGON                    => DragonDescription(),
+        PokemonType.NORMAL                    => NormalDescription(),
+        _                                     => DefaultDescription(TYPE)
+    };
 
-        int count = GameTableLogic.GetPlayerPokemons()
-            .FindAll(p => p is PokemonEntity pi && pi.POKEMON != null && pi.POKEMON.TYPE == TYPE).Count;
-
-        return count;
+    private static string ShadowDescription()
+    {
+        int total  = GetTypeBonusCount(PokemonType.GHOST) + GetTypeBonusCount(PokemonType.DARK);
+        int chance = Math.Min(total * 5, 40);
+        return $"    SHADOW: Ghost and Dark Pokemon have a {chance}% chance to fully evade a hit (cap 40%).    ";
     }
 
-    public static string GetGhostDarkDescription()
+    private static string ElectricDescription()
     {
-        int ghostCount = GetTypeBonusCount(PokemonType.GHOST);
-        int darkCount = GetTypeBonusCount(PokemonType.DARK);
-        int total = ghostCount + darkCount;
-        int chance = total * 5;
-
-        return $"    SHADOW: Ghost and Dark Pokemon gain {chance}% evasion chance based on total battlefield shadow icons.    ";
+        int chance = Math.Min(GetTypeBonusCount(PokemonType.ELECTRIC) * 15, 45);
+        return $"    STATIC: Electric attacks have a {chance}% chance to reduce the target SPEED by 15 (cap 45%).    ";
     }
 
-    public static string GetElectricDescription()
+    private static string GrassDescription()
     {
-        int electricCount = GetTypeBonusCount(PokemonType.ELECTRIC);
-        int chance = electricCount * 15;
-
-        return $"    STATIC: Electric attacks have a {chance}% chance to reduce the target SPEED by 15.    ";
+        int regen = GetTypeBonusCount(PokemonType.GRASS) * 5;
+        return $"    OVERGROW: Grass Pokemon regenerate up to {regen} HP per second while attacking (cap 2% max HP).    ";
     }
 
-    public static string GetGrassDescription()
+    private static string FireDescription()
     {
-        int count = GetTypeBonusCount(PokemonType.GRASS);
-        int regen = count * 5;
-
-        return $"    OVERGROW: Grass Pokemon regenerate {regen} HP per second.    ";
-    }
-
-    public static string GetFireDescription()
-    {
-        int count = GetTypeBonusCount(PokemonType.FIRE);
-        int buff = count * 5;
-
+        int buff = GetTypeBonusCount(PokemonType.FIRE) * 5;
         return $"    BLAZE: Increases ATK and SPATK of all active Pokemon by {buff}%.    ";
     }
 
-    public static string GetWaterDescription()
+    private static string WaterDescription()
     {
-        int count = GetTypeBonusCount(PokemonType.WATER);
-        int reduction = count * 10;
-
-        return $"    TORRENT: Reduces the ENERGY COST to use attacks by{reduction}%.    ";
+        int reduction = Math.Min(GetTypeBonusCount(PokemonType.WATER) * 10, 50);
+        return $"    TORRENT: Reduces the ENERGY needed for the special attack by {reduction}% (cap 50%).    ";
     }
 
-    public static string GetRockSteelDescription()
+    private static string SturdyDescription()
     {
-        int rockCount = GetTypeBonusCount(PokemonType.ROCK);
-        int steelCount = GetTypeBonusCount(PokemonType.STEEL);
-        int total = rockCount + steelCount;
-        int buff = total * 15;
-
-        return $"    STURDY: Increases DEF and SPDEF of all active Pokemon by {buff}.    ";
+        int total = GetTypeBonusCount(PokemonType.ROCK) + GetTypeBonusCount(PokemonType.STEEL);
+        int buff  = Math.Min(total * 8, 64);
+        return $"    STURDY: Increases DEF and SPDEF of all active Pokemon by {buff}% (cap 64%).    ";
     }
 
-    public static string GetBugDescription()
+    private static string BugDescription()
     {
         int count = GetTypeBonusCount(PokemonType.BUG);
-        int speedBuff = count * 10;
-
-        return $"    SWARM: Increases the attack SPEED of all Bug Pokemon by {speedBuff}%.    ";
+        return $"    SWARM: Active on field ({count}). No effect implemented yet.    ";
     }
 
-    public static string GetDragonDescription()
+    private static string DragonDescription()
+        => GetTypeBonusCount(PokemonType.DRAGON) == 1
+            ? "    PRESSURE: The lone Dragon on the battlefield deals double ATK and SPATK.    "
+            : "    PRESSURE: Only works with exactly one Dragon on the battlefield.    ";
+
+    private static string NormalDescription()
     {
-        int count = GetTypeBonusCount(PokemonType.DRAGON);
-        
-        if (count == 1)
-        {
-            return "    PRESSURE: Active Dragon Pokemon gains 100% bonus to all stats because it is unique on the battlefield.    ";
-        }
-        
-        return "    PRESSURE: Dragon Pokemon stats return to normal when more than one Dragon is on the battlefield.    ";
+        int buff = GetTypeBonusCount(PokemonType.NORMAL) * 8;
+        return $"    ADAPTABILITY: Normal Pokemon gain +{buff} ATK when attacking and +{buff} DEF when defending.    ";
     }
 
-    public static string GetNormalDescription()
-    {
-        int count = GetTypeBonusCount(PokemonType.NORMAL);
-        int buff = count * 10;
-
-        return $"ADAPTABILITY: Normal Pokemon gain +{buff} to ATK, DEF, and SPEED for each Normal Pokemon on the battlefield.";
-    }
-
-    public static string GetBonusDescription(PokemonType TYPE)
-    {
-        switch (TYPE)
-        {
-            case PokemonType.GHOST:
-            case PokemonType.DARK:
-                return GetGhostDarkDescription();
-            case PokemonType.ELECTRIC:
-                return GetElectricDescription();
-            case PokemonType.GRASS:
-                return GetGrassDescription();
-            case PokemonType.FIRE:
-                return GetFireDescription();
-            case PokemonType.WATER:
-                return GetWaterDescription();
-            case PokemonType.ROCK:
-            case PokemonType.STEEL:
-                return GetRockSteelDescription();
-            case PokemonType.BUG:
-                return GetBugDescription();
-            case PokemonType.DRAGON:
-                return GetDragonDescription();
-            case PokemonType.NORMAL:
-                return GetNormalDescription();
-            default:
-                int count = GetTypeBonusCount(TYPE);
-                return $"{TYPE.ToString().ToUpper()}: Active on field ({count}). No special bonus effect configured yet.";
-        }
-    }
+    private static string DefaultDescription(PokemonType TYPE)
+        => $"    {TYPE.ToString().ToUpperInvariant()}: Active on field ({GetTypeBonusCount(TYPE)}). No bonus configured yet.    ";
 }

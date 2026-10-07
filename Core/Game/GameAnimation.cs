@@ -1,29 +1,45 @@
-public class GameAnimation
+namespace PokemonTFT.Core;
+
+public sealed class GameAnimation
 {
-    public string TEXTURE_PATH;
-    public int[]  FRAMES;
-    public float  FRAME_SPEED;
-    public bool   LOOP;
-    public bool   DONE = false;
+    private static readonly int[] IDLE_FRAMES   = [1];
+    private static readonly int[] WALK_FRAMES   = [1, 0, 1, 2];
+    private static readonly int[] ATTACK_FRAMES = [2, 1, 0, 1];
 
-    private int    _currentIndex = 0;
-    private double _elapsed      = 0;
+    private readonly int[] _frames;
+    private readonly double _frameSpeed;
+    private readonly bool _loop;
 
-    public int GetFrame() { return FRAMES[_currentIndex]; }
+    private int _index;
+    private double _elapsed;
 
-    public void Update()
+    public bool DONE { get; private set; }
+
+    public GameAnimation(int[] FRAMES, double FRAME_SPEED, bool LOOP)
     {
-        if(DONE) return;
-        _elapsed += GameTimeLogic.DELTA;
-        if(_elapsed >= FRAME_SPEED)
-        {
-            _elapsed = 0;
-            _currentIndex++;
-            if(_currentIndex >= FRAMES.Length)
-            {
-                if(LOOP) _currentIndex = 0;
-                else { _currentIndex = FRAMES.Length - 1; DONE = true; }
-            }
-        }
+        _frames     = FRAMES.Length > 0 ? FRAMES : IDLE_FRAMES;
+        _frameSpeed = FRAME_SPEED > 0 ? FRAME_SPEED : 0.1;
+        _loop       = LOOP;
+    }
+
+    public static GameAnimation Idle()   => new(IDLE_FRAMES,   1.0,  LOOP: true);
+    public static GameAnimation Walk()   => new(WALK_FRAMES,   0.2,  LOOP: true);
+    public static GameAnimation Attack() => new(ATTACK_FRAMES, 0.06, LOOP: false);
+
+    public int CurrentFrame => _frames[_index];
+
+    public void Update(double DELTA)
+    {
+        if (DONE) return;
+
+        _elapsed += DELTA;
+        if (_elapsed < _frameSpeed) return;
+
+        _elapsed = 0;
+        _index++;
+        if (_index < _frames.Length) return;
+
+        if (_loop) _index = 0;
+        else { _index = _frames.Length - 1; DONE = true; }
     }
 }

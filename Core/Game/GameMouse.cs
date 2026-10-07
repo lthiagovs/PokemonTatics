@@ -1,80 +1,74 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
-namespace GAME.CORE;
+namespace PokemonTFT.Core;
 
-public static class GameMouse{
+public static class GameMouse
+{
+    private const int CURSOR_SIZE = 1;
 
-    private static short CURSOR_SIZE = 1;
+    private static MouseState _current;
+    private static MouseState _previous;
+    private static bool _clickConsumed;
+    private static bool _hoverCursor;
+    private static bool _cursorIsHand;
+    private static bool _cursorApplied;
 
-    private static GameElement CARRY_ELEMENT = null;
+    private static GameElement? _carry;
 
-    #region HELPERS
-    private static MouseState GetState() { return Mouse.GetState(); }
-
-    public static Point GetPos()
+    #region FRAME
+    public static void BeginFrame()
     {
-        MouseState _state = GameMouse.GetState();
-        return new Point(_state.X, _state.Y);
+        _previous      = _current;
+        _current       = Mouse.GetState();
+        _clickConsumed = false;
+        _hoverCursor   = false;
     }
 
-    public static Rectangle GetRectangle()
+    public static void EndFrame()
     {
-        MouseState _state = GameMouse.GetState();
-        return new Rectangle(_state.X, _state.Y, CURSOR_SIZE, CURSOR_SIZE);
-    }
+        _carry?.SetPosition(GetPos());
 
-    public static void SetCarryElement(GameElement ELEMENT) { GameMouse.CARRY_ELEMENT = ELEMENT; }
-    public static void ClearCarryElement() { GameMouse.CARRY_ELEMENT = null; } 
-    public static GameElement GetCarryElement() { return GameMouse.CARRY_ELEMENT; }
-    public static bool IsCarryElement() { return GameMouse.CARRY_ELEMENT != null; }
+        _carry?.Update();
+
+        if (_cursorApplied && _hoverCursor == _cursorIsHand) return;
+
+        _cursorIsHand  = _hoverCursor;
+        _cursorApplied = true;
+        Mouse.SetCursor(_cursorIsHand ? MouseCursor.Hand : MouseCursor.Arrow);
+    }
     #endregion
 
-    #region STATES
-    public static void SetStateHover()
-    {
-        Mouse.SetCursor(MouseCursor.Hand);
-    }
+    #region STATE
+    public static Point GetPos() => new(_current.X, _current.Y);
 
-    public static void SetStateDefault()
-    {
-        Mouse.SetCursor(MouseCursor.Arrow);
-    }
+    public static Rectangle GetRectangle() => new(_current.X, _current.Y, CURSOR_SIZE, CURSOR_SIZE);
 
+    public static bool IsOver(GameElement ELEMENT) => ELEMENT.GetRectangle().Intersects(GetRectangle());
+
+    public static void RequestHoverCursor() => _hoverCursor = true;
     #endregion
 
-    #region INPUTS
-
-    private static MouseState _previousState;
-
-    public static void Update()
-    {
-        if(GameMouse.CARRY_ELEMENT != null) CARRY_ELEMENT.SetPosition(GameMouse.GetPos());
-
-        //SELL
-        if(GameMouse.RightPressed()) {
-            
-            if(GameMouse.GetCarryElement() is PokemonEntity pe)
-            {
-                GameGlobals.ChangeMana(pe.POKEMON.COST);
-            }
-
-            GameMouse.ClearCarryElement();
-        }
-        _previousState = Mouse.GetState();
-    }
-
+    #region BUTTONS
     public static bool LeftPressed()
-    {
-        MouseState _state = GameMouse.GetState();
-        return _state.LeftButton == ButtonState.Pressed && _previousState.LeftButton == ButtonState.Released;
-    }
+        => !_clickConsumed
+        && _current.LeftButton == ButtonState.Pressed
+        && _previous.LeftButton == ButtonState.Released;
 
     public static bool RightPressed()
-    {
-        MouseState _state = GameMouse.GetState();
-        return _state.RightButton == ButtonState.Pressed && _previousState.RightButton == ButtonState.Released;
-    }
+        => _current.RightButton == ButtonState.Pressed
+        && _previous.RightButton == ButtonState.Released;
+
+    public static void ConsumeClick() => _clickConsumed = true;
     #endregion
-    
+
+    #region CARRY
+    public static void SetCarry(GameElement? ELEMENT) => _carry = ELEMENT;
+
+    public static void ClearCarry() => _carry = null;
+
+    public static GameElement? GetCarry() => _carry;
+
+    public static bool HasCarry() => _carry != null;
+    #endregion
 }

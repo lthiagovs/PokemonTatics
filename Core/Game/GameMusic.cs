@@ -1,69 +1,45 @@
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Media;
 
+namespace PokemonTFT.Core;
+
 public static class GameMusic
 {
+    public const float VOLUME_BG      = 0.2f;
+    public const float VOLUME_EFFECTS = 0.4f;
+    public const float VOLUME_HIT     = 0.1f;
 
-    public static Song TITLE;
-    public static Song MAIN;
-    private static bool IS_PLAYING = false;
-    public static float VOLUME_BG = 0.2f;
-    public static float VOLUME_EFFECTS = 0.4f;
+    public static Song? TITLE;
+    public static Song? MAIN;
 
-    //Effects
-    public static SoundEffect VICTORY;
-    public static SoundEffect LEVEL_UP;
-    public static SoundEffect HIT;
+    public static SoundEffect? VICTORY;
+    public static SoundEffect? LEVEL_UP;
+    public static SoundEffect? HIT;
 
+    private static Song? _playing;
 
-    public static void PlayTitle()
+    public static void PlayTitle() => PlaySong(TITLE);
+
+    public static void PlayMain() => PlaySong(MAIN);
+
+    private static void PlaySong(Song? SONG)
     {
-        if(IS_PLAYING) return;
-        IS_PLAYING = true;
-        MediaPlayer.Volume = VOLUME_BG;
-        MediaPlayer.Play(TITLE);
+        if (SONG == null || ReferenceEquals(_playing, SONG)) return;
+
+        _playing            = SONG;
+        MediaPlayer.Volume  = VOLUME_BG;
+        MediaPlayer.Play(SONG);
         MediaPlayer.IsRepeating = true;
-    }
-
-    public static void PlayMain()
-    {
-        if(IS_PLAYING) return;
-        IS_PLAYING = true;
-        MediaPlayer.Volume = VOLUME_BG;
-        MediaPlayer.Play(MAIN);
-        MediaPlayer.IsRepeating = true;
-    }
-
-    public static void PlayHit()
-    {
-        SoundEffectInstance sfx = HIT.CreateInstance();
-        sfx.Volume = 0.1f;
-        sfx.IsLooped = false;
-        sfx.Play();
-    }
-
-    public static void PlayVictory()
-    {
-        SoundEffectInstance sfx = VICTORY.CreateInstance();
-        sfx.Volume = VOLUME_EFFECTS;
-        sfx.IsLooped = false;
-        sfx.Play();
-    }
-
-    public static void PlayLevelUp()
-    {
-        SoundEffectInstance sfx = LEVEL_UP.CreateInstance();
-        sfx.Volume = VOLUME_EFFECTS;
-        sfx.IsLooped = false;
-        sfx.Play();
     }
 
     public static void Stop()
     {
-        if(!IS_PLAYING) return;
-        IS_PLAYING = false;
+        if (_playing == null) return;
+        _playing = null;
         MediaPlayer.Stop();
     }
 
-
+    public static void PlayHit()      => HIT?.Play(VOLUME_HIT, 0f, 0f);
+    public static void PlayVictory()  => VICTORY?.Play(VOLUME_EFFECTS, 0f, 0f);
+    public static void PlayLevelUp()  => LEVEL_UP?.Play(VOLUME_EFFECTS, 0f, 0f);
 }

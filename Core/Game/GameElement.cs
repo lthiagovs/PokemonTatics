@@ -1,93 +1,74 @@
-using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
+using PokemonTFT.Logic;
 
-namespace GAME.CORE;
+namespace PokemonTFT.Core;
+
 public class GameElement
 {
+    private static readonly IReadOnlyList<GameElement> NO_CHILDREN = [];
 
-    private Point POSITION;
-    public short SIZE_X;
-    public short SIZE_Y;
+    private Point _position;
+    private List<GameElement>? _children;
+
+    public int SIZE_X;
+    public int SIZE_Y;
     public bool VISIBLE;
+    public RenderEffect? EFFECT;
+
+    public float RENDER_SCALE = 1f;
+
+    public Vector2 RENDER_OFFSET = Vector2.Zero;
+
+    public float RENDER_ALPHA = 1f;
+
     protected GameRendererConfig RENDER_CONFIG;
 
-    public GameElement(short POS_X, short POS_Y, short SIZE_X, short SIZE_Y, bool VISIBLE)
+    public GameElement(int POS_X, int POS_Y, int SIZE_X, int SIZE_Y, bool VISIBLE)
     {
-        this.SetPosition(new Point(POS_X, POS_Y));
-        this.SIZE_X = SIZE_X;
-        this.SIZE_Y = SIZE_Y;
-        this.VISIBLE = VISIBLE;
-        this.RENDER_CONFIG = new GameRendererConfig();
+        _position     = new Point(POS_X, POS_Y);
+        this.SIZE_X   = SIZE_X;
+        this.SIZE_Y   = SIZE_Y;
+        this.VISIBLE  = VISIBLE;
+        RENDER_CONFIG = new GameRendererConfig();
     }
 
-    protected virtual void PostInit() { }
+    #region POSITION
+    public virtual Point GetPosition() => _position;
 
-    #region OPERATIONS
-    public short[] GetScale()
-    {
-        return [this.SIZE_X, this.SIZE_X];
-    }
+    public Point GetLocalPosition() => _position;
 
-    public short[] Resize(short NEW_SIZE_X, short NEW_SIZE_Y)
-    {
-        this.SIZE_X = NEW_SIZE_X;
-        this.SIZE_Y = NEW_SIZE_Y;
+    public virtual Point SetPosition(Point NEW_POSITION) => _position = NEW_POSITION;
 
-        return this.GetScale();
-    }
+    public virtual Rectangle GetRectangle() => new(GetPosition(), new Point(SIZE_X, SIZE_Y));
+    #endregion
 
-    public short[] Scale(short SCALE)
-    {
-        this.SIZE_X*=SCALE;
-        this.SIZE_Y*=SCALE;
+    #region CHILDREN
+    public IReadOnlyList<GameElement> GetChildren() => _children ?? NO_CHILDREN;
 
-        return this.GetScale();
-    }
-
-    public virtual Point Move(Point NEW_POSITION)
-    {
-        return this.SetPosition(NEW_POSITION);
-    }
-
-    public virtual Point Move(short MOVE_X = 0, short MOVE_Y = 0)
-    {
-
-        return this.SetPosition(new Point(this.POSITION.X+MOVE_X, this.POSITION.Y+MOVE_Y));
-    }
-
-    public virtual Point GetPosition() { return this.POSITION; }
-
-    public virtual Point SetPosition(Point NEW_POSITION) { return this.POSITION = NEW_POSITION; }
-
-    protected Point SizeAsPoint()
-    {
-        return new Point(this.SIZE_X, this.SIZE_Y);
-    }
-
-    public virtual Rectangle GetRectangle()
-    {
-        return new Rectangle(this.GetPosition(), this.SizeAsPoint());
-    } 
+    public void AddChild(GameElement CHILD) => (_children ??= []).Add(CHILD);
     #endregion
 
     #region RENDER & LOGIC
-    public virtual GameRendererConfig GetRendererConfig() { return this.RENDER_CONFIG; }
+    public GameRendererConfig GetRendererConfig() => RENDER_CONFIG;
 
-    public virtual void SetRendererConfig(GameRendererConfig CONFIG) { this.RENDER_CONFIG = CONFIG; }
+    public virtual void SetRendererConfig(GameRendererConfig CONFIG) => RENDER_CONFIG = CONFIG;
 
-    public RenderEffect EFFECT = null;
-
-    public void SetEffect(RenderEffect effect) { EFFECT = effect; }
+    public void SetEffect(RenderEffect? EFFECT) => this.EFFECT = EFFECT;
 
     public void UpdateEffect()
     {
-        if(EFFECT == null) return;
+        if (EFFECT == null) return;
         EFFECT.Update(GameTimeLogic.DELTA);
-        if(EFFECT.DONE) EFFECT = null;
+        if (EFFECT.DONE) EFFECT = null;
     }
 
-    public virtual void Update() {}
+    public virtual void Update() { }
+
+    public static void UpdateAll(IReadOnlyList<GameElement>? ELEMENTS)
+    {
+        if (ELEMENTS == null) return;
+        for (int i = 0; i < ELEMENTS.Count; i++) ELEMENTS[i].Update();
+    }
     #endregion
-
-
 }

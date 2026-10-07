@@ -1,29 +1,45 @@
-using System;
 using Microsoft.Xna.Framework;
 
-namespace GAME.CORE;
+namespace PokemonTFT.Core;
 
-public class GameRendererConfig
+public sealed class GameRendererConfig
 {
     public Color COLOR = Color.White;
-    public String TEXT = null;
-    public bool IS_HOVERING = false;
-    public String TEXTURE_PATH = null;
-    public Rectangle? RECTANGLE = null;
-    public bool IS_SLICE = false;
-    public int SLICE_SIZE = 0;
+    public string? TEXT;
+    public string? TEXTURE_PATH;
+    public Rectangle? SOURCE;
+    public bool IS_SLICE;
+    public int SLICE_SIZE;
     public int SLICE_PROPORTION = 1;
+    public bool IS_HOVERING;
 
-    //ALLOW DEFAULT CONFIG
-    public GameRendererConfig() { }
-    
-    public GameRendererConfig(Color COLOR, String TEXT, String TEXTURE_PATH, Rectangle RECTANGLE, bool IS_SLICE)
-    {
-        this.COLOR = COLOR;
-        this.TEXT = TEXT;
-        this.TEXTURE_PATH = TEXTURE_PATH;
-        this.RECTANGLE = RECTANGLE;
-        this.IS_SLICE = IS_SLICE;
-    }
+    public float FONT_SCALE = GameFonts.SMALL;
 
+    public int TEXT_SHADOW;
+
+    public Color TEXT_SHADOW_COLOR = Color.Black;
+
+    public static GameRendererConfig Solid(Color COLOR) => new() { COLOR = COLOR };
+
+    public static GameRendererConfig Label(string TEXT, Color? COLOR = null, float FONT_SCALE = GameFonts.SMALL, int TEXT_SHADOW = 0)
+        => new()
+        {
+            TEXT        = TEXT,
+            COLOR       = COLOR ?? Color.White,
+            FONT_SCALE  = FONT_SCALE,
+            TEXT_SHADOW = TEXT_SHADOW
+        };
+
+    public static GameRendererConfig Sprite(string TEXTURE_PATH, Rectangle? SOURCE = null, Color? COLOR = null)
+        => new() { TEXTURE_PATH = TEXTURE_PATH, SOURCE = SOURCE, COLOR = COLOR ?? Color.White };
+
+    public static GameRendererConfig NineSlice(string TEXTURE_PATH, int SLICE_SIZE, int SLICE_PROPORTION = 1, Color? COLOR = null)
+        => new()
+        {
+            TEXTURE_PATH     = TEXTURE_PATH,
+            IS_SLICE         = true,
+            SLICE_SIZE       = SLICE_SIZE,
+            SLICE_PROPORTION = SLICE_PROPORTION,
+            COLOR            = COLOR ?? Color.White
+        };
 }

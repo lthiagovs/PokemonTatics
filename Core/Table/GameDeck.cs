@@ -1,261 +1,278 @@
-using System;
 using System.Collections.Generic;
-using ENGINE.MODELS;
-using GAME.CORE;
-using GAME.UI;
 using Microsoft.Xna.Framework;
+using PokemonTFT.Core;
+using PokemonTFT.Data;
+using PokemonTFT.Logic;
+using PokemonTFT.Models;
+using PokemonTFT.UI;
+
+namespace PokemonTFT.Table;
 
 public static class GameDeck
 {
-    private static List<GameElement> DECK_ELEMENTS = new List<GameElement>();
-    public static List<GameElement> GetDeck() { return GameDeck.DECK_ELEMENTS; }
-    public static List<Pokemon> PokemonDecks = new List<Pokemon>();
+    public const int DECK_SIZE = 7;
 
-    private static GameInterfaceElement HP_METER;
-    private static GameInterfaceElement MANA_METER;
-    private static GameInterfaceElement HP_TEXT;
-    private static GameInterfaceElement MANA_TEXT;
+    private const int STATUSBAR_W = 80;
+    private const int STATUSBAR_H = 14;
+    private const int METER_W     = 6;
+    private const int METER_H     = 8;
+    private const int NAMEPLATE_W = 76;
+    private const int NAMEPLATE_H = 18;
+    private const int COSTPLATE_W = 32;
+    private const int COSTPLATE_H = 16;
+    private const int PORTRAIT_SRC = 40;
+    private const int TYPE_ICON    = 34;
+    private const int PLAY_W = 30;
+    private const int PLAY_H = 32;
 
-    private static int DECK_SIZE = 7;
+    private const int BAR_SCALE       = 3;
+    private const int UI_SCALE        = 2;
+    private const int METER_INSET_X   = 30;
+    private const int METER_INSET_Y   = 10;
+    private const int BAR_OFFSET_Y    = -15;
+    private const int HP_BAR_X        = 80;
+    private const int MANA_BAR_MARGIN = 100;
+    private const int PLAY_OFFSET_X   = -40;
+    private const int PLAY_OFFSET_Y   = -30;
+    private const int CARD_ROW_LIFT   = 22;
+    private const int NAMEPLATE_GAP   = 5;
+    private const int PORTRAIT_INSET  = 15;
+    private const int TYPE_ICON_INSET = 15;
+    private const int COST_OFFSET_X   = 40;
+    private const int COST_OFFSET_Y   = -20;
+    private const int WINDOW_ROWS     = 3;
 
-    public static void Initialize()
+    private const int REROLL_RIGHT_MARGIN = 40;
+
+    private static readonly List<GameElement> DECK_ELEMENTS = [];
+    private static readonly List<Pokemon> DECK = [];
+
+    private static GameInterfaceElement? _hpMeter;
+    private static GameInterfaceElement? _manaMeter;
+    private static GameInterfaceElement? _hpText;
+    private static GameInterfaceElement? _manaText;
+
+    public static IReadOnlyList<GameElement> GetDeck() => DECK_ELEMENTS;
+    public static IReadOnlyList<Pokemon> GetDeckPokemons() => DECK;
+
+    public static void RollDeck()
     {
-        int screenWidth  = GameRenderer.GetScreenWidth();
-        int screenHeight = GameRenderer.GetScreenHeight();
-        int tileSize     = screenWidth / 20;
-        int bgTile       = tileSize / 2;
-
-        int bgW = screenWidth - tileSize * 2;
-        int bgH = tileSize * 3;
-        int bgX = tileSize;
-        int bgY = screenHeight - bgH;
-
-        var winBg = new GameInterfaceElement(
-            (short)bgX, (short)bgY,
-            (short)bgW, (short)bgH, true);
-        winBg.SetRendererConfig(new GameRendererConfig(Color.White, null, "UI/Windows/window", Rectangle.Empty, true) { SLICE_SIZE = 16, SLICE_PROPORTION = 4 });
-        DECK_ELEMENTS.Add(winBg);
-        GameDeck.BuildHpBar(winBg);
-        GameDeck.BuildManaBar(winBg);
-
-        // PLAY BUTTON
-        var playButton = new GameButton(
-            (short)(bgW-40+winBg.GetPosition().X), (short) (-30 + winBg.GetPosition().Y),
-            (short) (30*2), (short) (32*2), true);
-        playButton.SetRendererConfig(new GameRendererConfig(Color.White, null, "UI/Icons/play_button", new Rectangle(0, 0, 30, 32), false));
-        playButton.CONFIG = new GameInterfaceConfig(true, false);
-        playButton.SetPosition(new Point(bgW-40+winBg.GetPosition().X,-30 + winBg.GetPosition().Y));
-        DECK_ELEMENTS.Add(playButton);
-
-        int cardGap  = tileSize / 4;
-        int cardH    = (int)(bgH * 0.50);
-        int cardW    = cardH;
-        int totalW   = (DECK_SIZE * cardW) + ((DECK_SIZE - 1) * cardGap);
-        int cardY    = bgY + bgTile - 22;
-        int statsW   = tileSize * 2;
-        int innerW   = bgW - statsW - tileSize;
-        int startX   = bgX + statsW + ((innerW - totalW) / 2);
-
-        for (int i = 0; i < DECK_SIZE; i++)
-        {
-            int cardX = startX + i * (cardW + cardGap);
-
-            var card = new GameCardElement(
-                (short)cardX, (short)cardY,
-                (short)cardW, (short)cardH, true);
-            card.SetRendererConfig(new GameRendererConfig(Color.White, null, "UI/Windows/card_transparent", Rectangle.Empty, true) { SLICE_SIZE = 24, SLICE_PROPORTION = 2 });
-            card.CONFIG = new GameInterfaceConfig(true, false);
-            card.SetPokemon(PokemonDecks[i]);
-            GameDeck.DECK_ELEMENTS.Add(card);
-
-            var sub_card = new GameInterfaceElement(
-                (short) (cardX-4), (short)(cardY + cardH + 5),
-                (short)(76 * 2), (short)(18 * 2), true);
-            sub_card.SetRendererConfig(new GameRendererConfig(Color.White, null, "UI/Windows/nameplate", new Rectangle(0, 0, 76, 18), false));
-            sub_card.CONFIG = new GameInterfaceConfig(false, false);
-            GameDeck.DECK_ELEMENTS.Add(sub_card);
-
-            int nameW    = (int)(GameRenderer.GetGameFont().MeasureString(PokemonDecks[i].NAME).X);
-            int nameH    = (int)(GameRenderer.GetGameFont().MeasureString(PokemonDecks[i].NAME).Y);
-            int nameX    = cardX + (76 * 2 / 2) - (nameW / 2);
-            int nameCenY = cardY + cardH + 5 + (18 * 2 / 2) - (nameH / 2);
-
-            var cardName = new GameInterfaceElement(
-                (short)nameX, (short) (nameCenY+2),
-                (short)nameW, (short)nameH, true);
-            cardName.SetRendererConfig(new GameRendererConfig(Color.White, PokemonDecks[i].NAME, null, Rectangle.Empty, false));
-            GameDeck.DECK_ELEMENTS.Add(cardName);
-
-            var portrait = new GameInterfaceElement(
-                (short)(cardX+15), (short)(cardY+15),
-                (short)(cardW-30), (short)(cardH-30), true);
-            portrait.SetRendererConfig(new GameRendererConfig(Color.White, null, $"Pokemons/{PokemonDecks[i].NAME}/portrait", new Rectangle(0, 0, 40, 40), false));
-            GameDeck.DECK_ELEMENTS.Add(portrait);
-
-            var costPlate = new GameInterfaceElement(
-                (short) (cardX+40), (short)(cardY + cardH - 20),
-                (short)(32 * 2), (short)(16 * 2), true);
-            costPlate.SetRendererConfig(new GameRendererConfig(Color.White, null, "UI/Windows/cost_plate", new Rectangle(0, 0, 32, 16), false));
-            costPlate.CONFIG = new GameInterfaceConfig(false, false);
-            GameDeck.DECK_ELEMENTS.Add(costPlate);
-
-            var cardCost = new GameInterfaceElement(
-                (short) (costPlate.GetPosition().X + (costPlate.SIZE_X/2)-4), (short) (costPlate.GetPosition().Y + (costPlate.SIZE_Y/2)-7),
-                (short)nameW, (short)nameH, true);
-            cardCost.SetRendererConfig(new GameRendererConfig(Color.White, PokemonDecks[i].COST.ToString(), null, Rectangle.Empty, false));
-            GameDeck.DECK_ELEMENTS.Add(cardCost);
-
-            GameDeck.BuildPokemonTypeIcon(card);
-        }
-
-        int iconW       = 20;
-        int iconH       = 22;
-        int iconSpacing = 10;
-        int totalStatH  = (iconH * 2) + iconSpacing;
-        int statStartY  = bgY + (bgH / 2) - (totalStatH / 2);
-        int statIconX   = bgX + tileSize;
-        int statTextX   = statIconX + iconW + 4;
-        int statTextW   = statsW - iconW - 8;
-
+        DECK.Clear();
+        for (int i = 0; i < DECK_SIZE; i++) DECK.Add(PokemonDatabase.PokemonList[System.Random.Shared.Next(PokemonDatabase.PokemonList.Count)]);
     }
 
     public static void Reset()
     {
-        GameDeck.DECK_ELEMENTS.Clear();
-        GameDeck.Initialize();
+        RollDeck();
+        Initialize();
     }
 
-    public static void BuildHpBar(GameInterfaceElement WINDOW)
+    public static void Initialize()
     {
-        int scale = 3;
-        int stats_bar_size = (int)(GameGlobals.PLAYER_HP / 100f * 10);
+        DECK_ELEMENTS.Clear();
+        if (DECK.Count == 0) RollDeck();
 
-        var hp_bar = new GameInterfaceElement(
-                (short)(80), (short)(-20),
-                (short)(80 * scale), (short)(14 * scale), true);
-            hp_bar.SetRendererConfig(new GameRendererConfig(Color.White, null, "UI/Windows/statusbar", new Rectangle(0, 0, 80, 14), false));
-            hp_bar.PARENT = WINDOW;
-            hp_bar.SetPosition(new Point(80, -15));
-            hp_bar.CONFIG = new GameInterfaceConfig(false, false);
+        int screenWidth  = GameRenderer.GetScreenWidth();
+        int screenHeight = GameRenderer.GetScreenHeight();
+        int tileSize     = screenWidth / GameTable.TILE_COLUMNS;
 
-        var hp_meter = new GameInterfaceElement(
-                (short)(30), (short)(10),
-                (short)(6 * scale * stats_bar_size), (short)(8 * scale), true);
-            hp_meter.SetRendererConfig(new GameRendererConfig(Color.White, null, "UI/Windows/hpbar", new Rectangle(0, 0, 6, 8), false));
-            hp_meter.PARENT = hp_bar;
-            hp_meter.SetPosition(new Point(30, 10));
-            hp_meter.CONFIG = new GameInterfaceConfig(false, false);
+        int windowW = screenWidth - tileSize * 2;
+        int windowH = tileSize * WINDOW_ROWS;
+        int windowX = tileSize;
+        int windowY = screenHeight - windowH;
 
-        string hpText = $"{GameGlobals.PLAYER_HP}/100";
-        Vector2 hpTextSize = GameRenderer.GetGameFont().MeasureString(hpText);
-        var hp_text = new GameInterfaceElement(
-                (short)0, (short)0,
-                (short)hpTextSize.X, (short)hpTextSize.Y, true);
-            hp_text.SetRendererConfig(new GameRendererConfig(Color.White, hpText, null, Rectangle.Empty, false));
-            hp_text.PARENT = hp_bar;
-            hp_text.SetPosition(new Point(
-                (int)((80 * scale) / 2 - hpTextSize.X / 2),
-                (int)((14 * scale) / 2 - hpTextSize.Y / 2)
-            ));
-            hp_text.CONFIG = new GameInterfaceConfig(false, false);
+        var window = new GameInterfaceElement(windowX, windowY, windowW, windowH, VISIBLE: true);
+        window.SetRendererConfig(GameRendererConfig.NineSlice("UI/Windows/window", SLICE_SIZE: 16, SLICE_PROPORTION: 4));
+        DECK_ELEMENTS.Add(window);
 
-        GameDeck.DECK_ELEMENTS.Add(hp_bar);
-        GameDeck.DECK_ELEMENTS.Add(hp_meter);
-        GameDeck.DECK_ELEMENTS.Add(hp_text);
-        GameDeck.HP_METER = hp_meter;
-        GameDeck.HP_TEXT = hp_text;
+        BuildStatusBar(window, "UI/Windows/hpbar", HP_BAR_X, GameGlobals.PLAYER_HP,
+            out _hpMeter, out _hpText);
+
+        BuildStatusBar(window, "UI/Windows/manabar", windowW - STATUSBAR_W * BAR_SCALE - MANA_BAR_MARGIN, GameGlobals.PLAYER_MANA,
+            out _manaMeter, out _manaText);
+
+        BuildPlayButton(windowX + windowW + PLAY_OFFSET_X, windowY + PLAY_OFFSET_Y);
+        BuildRerollButton(
+            windowX + windowW - NAMEPLATE_W * UI_SCALE - REROLL_RIGHT_MARGIN,
+            windowY + windowH / 2 - NAMEPLATE_H * UI_SCALE / 2);
+        BuildCards(windowX, windowY, windowW, windowH, tileSize);
     }
 
-    public static void BuildManaBar(GameInterfaceElement WINDOW)
+    public static void RequestRebuild() => _rebuildRequested = true;
+
+    private static bool _rebuildRequested;
+
+    #region STATUS BARS
+    private static void BuildStatusBar(
+        GameInterfaceElement WINDOW, string METER_TEXTURE, int LOCAL_X, int VALUE,
+        out GameInterfaceElement METER, out GameInterfaceElement TEXT)
     {
-        int scale = 3;
-        int stats_bar_size = (int)(GameGlobals.PLAYER_MANA / 100f * 10);
+        var bar = new GameInterfaceElement(LOCAL_X, BAR_OFFSET_Y,
+            STATUSBAR_W * BAR_SCALE, STATUSBAR_H * BAR_SCALE, VISIBLE: true, PARENT: WINDOW);
+        bar.SetRendererConfig(GameRendererConfig.Sprite("UI/Windows/statusbar", new Rectangle(0, 0, STATUSBAR_W, STATUSBAR_H)));
 
-        var mana_bar = new GameInterfaceElement(
-                (short)(0), (short)(0),
-                (short)(80 * scale), (short)(14 * scale), true);
-            mana_bar.SetRendererConfig(new GameRendererConfig(Color.White, null, "UI/Windows/statusbar", new Rectangle(0, 0, 80, 14), false));
-            mana_bar.PARENT = WINDOW;
-            mana_bar.SetPosition(new Point(WINDOW.SIZE_X - (80 * scale) - 100, -15));
-            mana_bar.CONFIG = new GameInterfaceConfig(false, false);
+        METER = new GameInterfaceElement(METER_INSET_X, METER_INSET_Y,
+            MeterWidth(VALUE), METER_H * BAR_SCALE, VISIBLE: true, PARENT: bar);
+        METER.SetRendererConfig(GameRendererConfig.Sprite(METER_TEXTURE, new Rectangle(0, 0, METER_W, METER_H)));
 
-        var mana_meter = new GameInterfaceElement(
-                (short)(30), (short)(10),
-                (short)(6 * scale * stats_bar_size), (short)(8 * scale), true);
-            mana_meter.SetRendererConfig(new GameRendererConfig(Color.White, null, "UI/Windows/manabar", new Rectangle(0, 0, 6, 8), false));
-            mana_meter.PARENT = mana_bar;
-            mana_meter.SetPosition(new Point(30, 10));
-            mana_meter.CONFIG = new GameInterfaceConfig(false, false);
+        string label = $"{VALUE}/{GameGlobals.MAX_HP}";
+        Vector2 size = GameRenderer.GetGameFont().MeasureString(label);
 
-        string manaText = $"{GameGlobals.PLAYER_MANA}/100";
-        Vector2 manaTextSize = GameRenderer.GetGameFont().MeasureString(manaText);
-        var mana_text = new GameInterfaceElement(
-                (short)0, (short)0,
-                (short)manaTextSize.X, (short)manaTextSize.Y, true);
-            mana_text.SetRendererConfig(new GameRendererConfig(Color.White, manaText, null, Rectangle.Empty, false));
-            mana_text.PARENT = mana_bar;
-            mana_text.SetPosition(new Point(
-                (int)((80 * scale) / 2 - manaTextSize.X / 2),
-                (int)((14 * scale) / 2 - manaTextSize.Y / 2)
-            ));
-            mana_text.CONFIG = new GameInterfaceConfig(false, false);
+        TEXT = new GameInterfaceElement(
+            (int)(STATUSBAR_W * BAR_SCALE / 2 - size.X / 2),
+            (int)(STATUSBAR_H * BAR_SCALE / 2 - size.Y / 2),
+            (int)size.X, (int)size.Y, VISIBLE: true, PARENT: bar);
+        TEXT.SetRendererConfig(GameRendererConfig.Label(label));
 
-        GameDeck.DECK_ELEMENTS.Add(mana_bar);
-        GameDeck.DECK_ELEMENTS.Add(mana_meter);
-        GameDeck.DECK_ELEMENTS.Add(mana_text);
-        GameDeck.MANA_METER = mana_meter;
-        GameDeck.MANA_TEXT = mana_text;
+        DECK_ELEMENTS.Add(bar);
+        DECK_ELEMENTS.Add(METER);
+        DECK_ELEMENTS.Add(TEXT);
     }
 
-    public static void BuildPokemonTypeIcon(GameCardElement CARD)
+    private static int MeterWidth(int VALUE) => (int)(METER_W * BAR_SCALE * (VALUE / 100f * 10));
+    #endregion
+
+    #region PLAY BUTTON
+    private static void BuildPlayButton(int X, int Y)
     {
-        Pokemon _pkmEntity = CARD.GetPokemon();
-
-        int scale = 1;
-        int assetSize = 34;
-        int size = assetSize*scale;
-        String _assetsName = _pkmEntity.TYPE.ToString().ToLower();
-
-        var pkmTypeIcon = new GameInterfaceElement(
-                (short) (0), (short)(0),
-                (short)(size), (short)(size), true);
-            pkmTypeIcon.SetRendererConfig(new GameRendererConfig(Color.White, null, "UI/Types/"+_assetsName, new Rectangle(0, 0, assetSize, assetSize), false));
-            pkmTypeIcon.PARENT = CARD;
-            pkmTypeIcon.SetPosition(new Point(CARD.SIZE_X-size-15,15));
-            pkmTypeIcon.CONFIG = new GameInterfaceConfig(false, false);
-        
-        GameDeck.DECK_ELEMENTS.Add(pkmTypeIcon);
-    }
-
-    public static void GetRandomDecks()
-    {
-        Random _random = new Random();
-        GameDeck.PokemonDecks.Clear();
-
-        for (int i = 0; i < DECK_SIZE; i++)
+        var play = new GameButton(X, Y, PLAY_W * UI_SCALE, PLAY_H * UI_SCALE, VISIBLE: true)
         {
-            int index = _random.Next(0, PokemonDatabase.PokemonList.Count);
-            PokemonDecks.Add(PokemonDatabase.PokemonList[index]);
+            HOVERABLE = true,
+            ON_CLICK  = StartRound
+        };
+        play.SetRendererConfig(GameRendererConfig.Sprite("UI/Icons/play_button", new Rectangle(0, 0, PLAY_W, PLAY_H)));
+        DECK_ELEMENTS.Add(play);
+    }
+
+    private static void StartRound()
+    {
+        if (GameGlobals.GAME_STARTED) return;
+        GameGlobals.GAME_STARTED = true;
+        GameBonus.Refresh();
+    }
+
+    private static void BuildRerollButton(int X, int Y)
+    {
+        var reroll = new GameButton(X, Y, NAMEPLATE_W * UI_SCALE, NAMEPLATE_H * UI_SCALE, VISIBLE: true)
+        {
+            HOVERABLE   = true,
+            IDLE_BOB    = 0f,
+            HOVER_SCALE = 1.08f,
+            ON_CLICK    = TryReroll
+        };
+        reroll.SetRendererConfig(GameRendererConfig.Sprite("UI/Windows/nameplate", new Rectangle(0, 0, NAMEPLATE_W, NAMEPLATE_H)));
+
+        string label = $"REROLL {Balance.REROLL_COST}";
+        Vector2 size = GameFonts.Measure(label, GameFonts.SMALL);
+        var text = new GameInterfaceElement(
+            (int)(NAMEPLATE_W * UI_SCALE / 2 - size.X / 2),
+            (int)(NAMEPLATE_H * UI_SCALE / 2 - size.Y / 2),
+            (int)size.X, (int)size.Y, VISIBLE: true, PARENT: reroll);
+        text.SetRendererConfig(GameRendererConfig.Label(label));
+
+        reroll.AddChild(text);
+        DECK_ELEMENTS.Add(reroll);
+    }
+
+    private static void TryReroll()
+    {
+        if (GameGlobals.GAME_STARTED) return;
+        if (GameGlobals.PLAYER_MANA < Balance.REROLL_COST) return;
+
+        GameGlobals.ChangeMana(-Balance.REROLL_COST);
+        RollDeck();
+        RequestRebuild();
+    }
+    #endregion
+
+    #region CARDS
+    private static void BuildCards(int WINDOW_X, int WINDOW_Y, int WINDOW_W, int WINDOW_H, int TILE_SIZE)
+    {
+        int cardH  = (int)(WINDOW_H * 0.50);
+        int cardW  = cardH;
+        int gap    = TILE_SIZE / 4;
+        int totalW = DECK_SIZE * cardW + (DECK_SIZE - 1) * gap;
+        int cardY  = WINDOW_Y + TILE_SIZE / 2 - CARD_ROW_LIFT;
+
+        int statsW = TILE_SIZE * 2;
+        int innerW = WINDOW_W - statsW - TILE_SIZE;
+        int startX = WINDOW_X + statsW + (innerW - totalW) / 2;
+
+        for (int i = 0; i < DECK_SIZE && i < DECK.Count; i++)
+        {
+            BuildCard(DECK[i], startX + i * (cardW + gap), cardY, cardW, cardH);
         }
     }
 
+    private static void BuildCard(Pokemon POKEMON, int X, int Y, int W, int H)
+    {
+        var card = new GameCardElement(X, Y, W, H, VISIBLE: true);
+        card.SetRendererConfig(GameRendererConfig.NineSlice("UI/Windows/card_transparent", SLICE_SIZE: 24, SLICE_PROPORTION: 2));
+        card.SetPokemon(POKEMON);
+        DECK_ELEMENTS.Add(card);
+
+        var nameplate = new GameInterfaceElement(X - 4, Y + H + NAMEPLATE_GAP,
+            NAMEPLATE_W * UI_SCALE, NAMEPLATE_H * UI_SCALE, VISIBLE: true);
+        nameplate.SetRendererConfig(GameRendererConfig.Sprite("UI/Windows/nameplate", new Rectangle(0, 0, NAMEPLATE_W, NAMEPLATE_H)));
+        DECK_ELEMENTS.Add(nameplate);
+
+        Vector2 nameSize = GameRenderer.GetGameFont().MeasureString(POKEMON.NAME);
+        var name = new GameInterfaceElement(
+            (int)(NAMEPLATE_W * UI_SCALE / 2 - nameSize.X / 2),
+            (int)(NAMEPLATE_H * UI_SCALE / 2 - nameSize.Y / 2) + 2,
+            (int)nameSize.X, (int)nameSize.Y, VISIBLE: true, PARENT: nameplate);
+        name.SetRendererConfig(GameRendererConfig.Label(POKEMON.NAME));
+        DECK_ELEMENTS.Add(name);
+
+        var portrait = new GameInterfaceElement(PORTRAIT_INSET, PORTRAIT_INSET,
+            W - PORTRAIT_INSET * 2, H - PORTRAIT_INSET * 2, VISIBLE: true, PARENT: card);
+        portrait.SetRendererConfig(GameRendererConfig.Sprite(POKEMON.PortraitPath, new Rectangle(0, 0, PORTRAIT_SRC, PORTRAIT_SRC)));
+        DECK_ELEMENTS.Add(portrait);
+
+        var costPlate = new GameInterfaceElement(X + COST_OFFSET_X, Y + H + COST_OFFSET_Y,
+            COSTPLATE_W * UI_SCALE, COSTPLATE_H * UI_SCALE, VISIBLE: true);
+        costPlate.SetRendererConfig(GameRendererConfig.Sprite("UI/Windows/cost_plate", new Rectangle(0, 0, COSTPLATE_W, COSTPLATE_H)));
+        DECK_ELEMENTS.Add(costPlate);
+
+        string costLabel = POKEMON.COST.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        Vector2 costSize = GameRenderer.GetGameFont().MeasureString(costLabel);
+        var cost = new GameInterfaceElement(
+            (int)(COSTPLATE_W * UI_SCALE / 2 - costSize.X / 2),
+            (int)(COSTPLATE_H * UI_SCALE / 2 - costSize.Y / 2),
+            (int)costSize.X, (int)costSize.Y, VISIBLE: true, PARENT: costPlate);
+        cost.SetRendererConfig(GameRendererConfig.Label(costLabel));
+        DECK_ELEMENTS.Add(cost);
+
+        var typeIcon = new GameInterfaceElement(
+            W - TYPE_ICON - TYPE_ICON_INSET, TYPE_ICON_INSET,
+            TYPE_ICON, TYPE_ICON, VISIBLE: true, PARENT: card);
+        typeIcon.SetRendererConfig(GameRendererConfig.Sprite(POKEMON.IconPath, new Rectangle(0, 0, TYPE_ICON, TYPE_ICON)));
+        DECK_ELEMENTS.Add(typeIcon);
+    }
+    #endregion
+
+    #region UPDATE
     public static void Update()
     {
-        int scale = 3;
-        int hpSize   = (int)(6 * scale * (GameGlobals.PLAYER_HP   / 100f * 10));
-        int manaSize = (int)(6 * scale * (GameGlobals.PLAYER_MANA / 100f * 10));
-        if(HP_METER != null)
+        if (_rebuildRequested)
         {
-            HP_METER.SIZE_X  = (short)hpSize;
-            HP_METER.VISIBLE = hpSize > 0;
-            GameDeck.HP_TEXT.SetRendererConfig(new GameRendererConfig(Color.White, $"{GameGlobals.PLAYER_HP}/100", null, Rectangle.Empty, false));
+            _rebuildRequested = false;
+            Initialize();
         }
-        if(MANA_METER != null)
-        {
-            MANA_METER.SIZE_X  = (short)manaSize;
-            MANA_METER.VISIBLE = manaSize > 0;
-            GameDeck.MANA_TEXT.SetRendererConfig(new GameRendererConfig(Color.White, $"{GameGlobals.PLAYER_MANA}/100", null, Rectangle.Empty, false));
-        }
+
+        UpdateMeter(_hpMeter,   _hpText,   GameGlobals.PLAYER_HP);
+        UpdateMeter(_manaMeter, _manaText, GameGlobals.PLAYER_MANA);
     }
-    
+
+    private static void UpdateMeter(GameInterfaceElement? METER, GameInterfaceElement? TEXT, int VALUE)
+    {
+        if (METER == null) return;
+
+        int width = MeterWidth(VALUE);
+        METER.SIZE_X  = width;
+        METER.VISIBLE = width > 0;
+
+        if (TEXT != null) TEXT.GetRendererConfig().TEXT = $"{VALUE}/{GameGlobals.MAX_HP}";
+    }
+    #endregion
 }

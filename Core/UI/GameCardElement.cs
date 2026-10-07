@@ -1,104 +1,84 @@
-using ENGINE.MODELS;
-using GAME.CORE;
 using Microsoft.Xna.Framework;
+using PokemonTFT.Core;
+using PokemonTFT.Logic;
+using PokemonTFT.Models;
 
-namespace GAME.UI;
+namespace PokemonTFT.UI;
 
-public class GameCardElement : GameInterfaceElement
+public sealed class GameCardElement : GameInterfaceElement
 {
+    private const double HOVER_DELAY = 1.0;
 
-    private PokemonEntity POKEMON_ENTITY = null;
+    private Pokemon? _pokemon;
+    private double _hoverElapsed;
 
-    private double _hoverElapsed = 0;
-    private const double HOVER_DELAY = 1;
-
-    GameHint HINT = null;
-
-    public GameCardElement(short POS_X, short POS_Y, short SIZE_X, short SIZE_Y, bool VISIBLE, GameInterfaceElement PARENT = null) 
-    : base(POS_X, POS_Y, SIZE_X, SIZE_Y, VISIBLE, PARENT) { 
-        this.COLOR_STATE = this.GetRendererConfig().COLOR;
-
-    }
-
-    public void SetPokemon(Pokemon POKEMON)
+    public GameCardElement(int POS_X, int POS_Y, int SIZE_X, int SIZE_Y, bool VISIBLE, GameInterfaceElement? PARENT = null)
+        : base(POS_X, POS_Y, SIZE_X, SIZE_Y, VISIBLE, PARENT)
     {
-        this.POKEMON_ENTITY = new PokemonEntity(0, 0, 32, 32, true);
-        this.POKEMON_ENTITY.POKEMON = POKEMON;
-
-        GameEntityRenderConfig cfg = new GameEntityRenderConfig();
-        cfg.TEXTURE_PATH = "Pokemons/"+POKEMON.NAME+"/moveset";
-        cfg.SLICE_SIZE = 32;
-        cfg.SIZE = 3;
-        cfg.ANIMATION_SPEED = 1;
-        this.HINT = new GameHint(POKEMON.BuildPokemonHint());
-        this.HINT.VISIBLE = false;
-        this.POKEMON_ENTITY.SetEntityConfig(cfg);
+        HOVERABLE = true;
     }
 
-    public Pokemon GetPokemon() { return this.POKEMON_ENTITY.POKEMON; }
+    public void SetPokemon(Pokemon POKEMON) => _pokemon = POKEMON;
+
+    public Pokemon? GetPokemon() => _pokemon;
 
     public override void Update()
     {
+        base.Update();
 
-        this.GetRendererConfig().COLOR = COLOR_STATE;
+        if (_pokemon == null) return;
 
-        // MOUSE DETECTION
-        if(this.GetRectangle().Intersects(GameMouse.GetRectangle())) {
-            
-            // HOVER
-            if(this.CONFIG.IsHover()) { 
-                this.RENDER_CONFIG.COLOR = Color.White * 0.5f; 
-                _hoverElapsed += GameTimeLogic.DELTA;
-                if(_hoverElapsed >= HOVER_DELAY)
-                {
-                    this.HINT.VISIBLE = true;
-                    if(!GameMouse.IsCarryElement()) GameMouse.SetCarryElement(HINT);
-                }
-
-            }
-            
-            //DRAG
-            if(GameMouse.LeftPressed() && !GameMouse.IsCarryElement())
-            {
-
-                if(POKEMON_ENTITY.POKEMON.COST > GameGlobals.PLAYER_MANA) return;
-
-                if(GameTableLogic.GetPlayerPokemon(this.POKEMON_ENTITY.POKEMON.NAME)!=null)
-                {
-                        GameTableLogic.GetPlayerPokemon(this.POKEMON_ENTITY.POKEMON.NAME).POKEMON.LevelUp();
-                        GameGlobals.ChangeMana(POKEMON_ENTITY.POKEMON.COST*-1);
-                        return;
-                }
-
-                if(GameGlobals.GAME_STARTED) return;
-
-                //TABLE LIMIT
-                if (GameTableLogic.GetPlayerPokemonsCount() >= GameGlobals.GetTableSize()) return;
-
-                GameGlobals.ChangeMana(POKEMON_ENTITY.POKEMON.COST*-1);
-
-                PokemonEntity _carry = new PokemonEntity(0, 0, 32, 32, true);
-                _carry.POKEMON    = this.POKEMON_ENTITY.POKEMON;
-                _carry.DIRECTION  = this.POKEMON_ENTITY.DIRECTION;
-                _carry.IS_MOVING  = this.POKEMON_ENTITY.IS_MOVING;
-                _carry.SetEntityConfig(this.POKEMON_ENTITY.GetEntityConfig());
-                _carry.SetPosition(GameMouse.GetPos());
-                GameMouse.SetCarryElement(_carry);
-            }
-
-        }
-        else
+        if (!IsHovered())
         {
-
-            if(GameMouse.GetCarryElement() == HINT) 
-            {
-                GameMouse.ClearCarryElement();
-                _hoverElapsed = 0;
-                this.HINT.Hide();
-            }
-                    
+            _hoverElapsed = 0;
+            GameTooltip.Hide(this);
+            return;
         }
 
+        GetRendererConfig().COLOR = Color.White * 0.5f;
+        if (!GameGlobals.GAME_STARTED) GameMouse.RequestHoverCursor();
+
+        _hoverElapsed += GameTimeLogic.DELTA;
+        if (_hoverElapsed >= HOVER_DELAY) GameTooltip.Show(this, PokemonHintText.Build(_pokemon));
+
+        if (GameMouse.LeftPressed() && !GameMouse.HasCarry()) TryBuy(_pokemon);
     }
 
+    private static void TryBuy(Pokemon POKEMON)
+    {
+        if (POKEMON.COST > GameGlobals.PLAYER_MANA) return;
+
+        if (GameGlobals.GAME_STARTED) return;
+
+        GameMouse.ConsumeClick();
+
+        PokemonEntity? owned = GameTableLogic.GetPlayerPokemon(POKEMON.NAME);
+        if (owned?.POKEMON != null)
+        {
+            owned.POKEMON.LevelUp();
+            GameMusic.PlayLevelUp();
+            GameGlobals.ChangeMana(-POKEMON.COST);
+
+            Rectangle bounds = owned.GetRectangle();
+            FloatingText.SpawnStatus("LEVEL UP", new Point(bounds.X + bounds.Width / 2, bounds.Y), new Color(255, 220, 90));
+            owned.SetEffect(new RenderEffect(RenderEffectType.FLASH, 0.4f));
+
+            Screens.EvolutionScene.Enqueue(owned);
+            return;
+        }
+
+        if (GameTableLogic.GetPlayerPokemonsCount() >= GameGlobals.GetTableSize()) return;
+
+        GameGlobals.ChangeMana(-POKEMON.COST);
+
+        var carry = new PokemonEntity(GameMouse.GetPos().X, GameMouse.GetPos().Y)
+        {
+            POKEMON   = POKEMON.Clone(),
+            ENEMY     = false,
+            PURCHASED = true,
+            CARRIED   = true
+        };
+        carry.SetEffect(new RenderEffect(RenderEffectType.FADE_IN, 0.15f));
+        GameMouse.SetCarry(carry);
+    }
 }

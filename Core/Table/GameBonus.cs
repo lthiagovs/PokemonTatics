@@ -1,90 +1,77 @@
 using System;
 using System.Collections.Generic;
-using ENGINE.MODELS;
-using GAME.CORE;
-using GAME.UI;
 using Microsoft.Xna.Framework;
+using PokemonTFT.Core;
+using PokemonTFT.Logic;
+using PokemonTFT.Models;
+using PokemonTFT.UI;
 
-namespace GAME.TABLE;
+namespace PokemonTFT.Table;
 
 public static class GameBonus
 {
-    private static List<GameElement> BONUS_ELEMENTS = new List<GameElement>();
-    public static List<GameElement> GetBonusElements() => BONUS_ELEMENTS;
-
     private const int ICON_ASSET_SIZE = 34;
-    private const int SCALE = 1;
-    private const int ICON_SIZE = ICON_ASSET_SIZE * SCALE;
+    private const int ICON_SIZE = ICON_ASSET_SIZE;
     private const int SPACING_X = 4;
     private const int SPACING_Y = 6;
     private const int START_X = 20;
     private const int START_Y = 40;
-    private static int _lastPokemonCount = -1;
+    private const int HEADER_X = 20;
+    private const int HEADER_Y = 20;
 
-    public static void Initialize()
+    private static readonly List<GameElement> BONUS_ELEMENTS = [];
+    private static readonly PokemonType[] TYPES = Enum.GetValues<PokemonType>();
+
+    private static int _lastSignature = int.MinValue;
+
+    public static IReadOnlyList<GameElement> GetBonusElements() => BONUS_ELEMENTS;
+
+    public static void Refresh()
     {
-        BONUS_ELEMENTS.Clear();
-
-        var cardName = new GameInterfaceElement(20,  20, 100, 100, true);
-            cardName.SetRendererConfig(new GameRendererConfig(Color.White, $"TABLE SIZE: {GameGlobals.GetTableSize()}", null, Rectangle.Empty, false));
-        BONUS_ELEMENTS.Add(cardName);
-
-        int currentRow = 0;
-
-        foreach (PokemonType type in Enum.GetValues(typeof(PokemonType)))
-        {
-            int count = GameBonusLogic.GetTypeBonusCount(type);
-
-            if (count == 0) continue;
-
-            for (int i = 0; i < count; i++)
-            {
-                int posX = START_X + i * (ICON_SIZE + SPACING_X);
-                int posY = START_Y + currentRow * (ICON_SIZE + SPACING_Y);
-
-                string assetName = type.ToString().ToLower();
-
-                var typeIcon = new GameBonusElement(
-                    (short)posX, (short)posY, 
-                    (short)ICON_SIZE, (short)ICON_SIZE, true
-                );
-
-                typeIcon.TYPE = type;
-
-                typeIcon.SetRendererConfig(new GameRendererConfig(
-                    Color.White, null, "UI/Types/" + assetName, 
-                    new Rectangle(0, 0, ICON_ASSET_SIZE, ICON_ASSET_SIZE), false
-                ));
-                
-                typeIcon.CONFIG = new GameInterfaceConfig(false, false);
-
-                typeIcon.HINT = new GameHint(""); 
-
-                BONUS_ELEMENTS.Add(typeIcon);
-            }
-
-            currentRow++;
-        }
+        _lastSignature = int.MinValue;
+        Update();
     }
 
     public static void Update()
     {
-        if (GameTable.TABLE_ELEMENTS == null) return;
+        int signature = GameBonusLogic.SNAPSHOT.Signature();
+        if (signature == _lastSignature) return;
 
-        int currentPokemonCount = 0;
+        _lastSignature = signature;
+        Rebuild();
+    }
 
-        for (int i = 0; i < GameTable.TABLE_ELEMENTS.Count; i++)
+    private static void Rebuild()
+    {
+        BONUS_ELEMENTS.Clear();
+
+        var header = new GameInterfaceElement(HEADER_X, HEADER_Y, 100, 100, VISIBLE: true);
+        header.SetRendererConfig(GameRendererConfig.Label($"TABLE SIZE: {GameGlobals.GetTableSize()}"));
+        BONUS_ELEMENTS.Add(header);
+
+        int row = 0;
+        foreach (PokemonType type in TYPES)
         {
-            if (GameTable.TABLE_ELEMENTS[i] is GameTableElement tElement && tElement.HasPokemon())
+            int count = GameBonusLogic.GetTypeBonusCount(type);
+            if (count == 0) continue;
+
+            for (int i = 0; i < count; i++)
             {
-                currentPokemonCount++;
-            }
-        }
+                var icon = new GameBonusElement(
+                    START_X + i * (ICON_SIZE + SPACING_X),
+                    START_Y + row * (ICON_SIZE + SPACING_Y),
+                    ICON_SIZE, ICON_SIZE, VISIBLE: true)
+                {
+                    TYPE = type
+                };
+                icon.SetRendererConfig(GameRendererConfig.Sprite(
+                    PokemonTypeAssets.IconPath(type),
+                    new Rectangle(0, 0, ICON_ASSET_SIZE, ICON_ASSET_SIZE)));
 
-        if (currentPokemonCount != _lastPokemonCount)
-        {
-            _lastPokemonCount = currentPokemonCount;
-            Initialize();
+                BONUS_ELEMENTS.Add(icon);
+            }
+
+            row++;
         }
     }
 }

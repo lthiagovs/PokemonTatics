@@ -1,65 +1,69 @@
-using GAME.CORE;
-using Microsoft.Xna.Framework;
+using PokemonTFT.Logic;
+
+namespace PokemonTFT.Core;
+
+public sealed class GameEntityRenderConfig
+{
+    public const int DEFAULT_SLICE = 32;
+    public const int DEFAULT_SCALE = 3;
+
+    public readonly int SLICE_SIZE;
+    public readonly int SCALE;
+    public readonly string TEXTURE_PATH;
+
+    public int DrawSize => SLICE_SIZE * SCALE;
+
+    public GameEntityRenderConfig(string TEXTURE_PATH, int SLICE_SIZE = DEFAULT_SLICE, int SCALE = DEFAULT_SCALE)
+    {
+        this.TEXTURE_PATH = TEXTURE_PATH;
+        this.SLICE_SIZE   = SLICE_SIZE;
+        this.SCALE        = SCALE;
+    }
+}
 
 public class GameEntity : GameElement
 {
+    private static readonly GameEntityRenderConfig MISSING = new("Environment/shadow");
 
-    public GameEntity(short POS_X, short POS_Y, short SIZE_X, short SIZE_Y, bool VISIBLE) : base(POS_X, POS_Y, SIZE_X, SIZE_Y, VISIBLE) { 
-        // SET DEFAULT
-        this.CONFIG = new GameEntityRenderConfig();
-    }
+    private GameEntityRenderConfig _config = MISSING;
+    private GameAnimation? _oneShot;
+
+    private readonly GameAnimation _idleAnimation = GameAnimation.Idle();
+    private readonly GameAnimation _walkAnimation = GameAnimation.Walk();
 
     public GameDirection DIRECTION = GameDirection.TOP_RIGHT;
-    private GameEntityRenderConfig CONFIG;
-    private int FRAME = 0;
-    public bool IS_MOVING = false;
+    public bool IS_MOVING;
 
-    public int GetFrame() { return this.FRAME; }
+    public GameEntity(int POS_X, int POS_Y, int SIZE_X, int SIZE_Y, bool VISIBLE)
+        : base(POS_X, POS_Y, SIZE_X, SIZE_Y, VISIBLE) { }
 
-    private GameAnimation ANIMATION = null;
+    public virtual GameEntityRenderConfig GetEntityConfig() => _config;
 
-    public GameEntityRenderConfig GetEntityConfig() { return this.CONFIG; }
-    public void SetEntityConfig(GameEntityRenderConfig CONFIG) {this.CONFIG = CONFIG; }
+    public void SetEntityConfig(GameEntityRenderConfig CONFIG) => _config = CONFIG;
 
-    public void SetAnimation(GameAnimation ANIMATION) { this.ANIMATION = ANIMATION; }
+    public void PlayOnce(GameAnimation ANIMATION) => _oneShot = ANIMATION;
 
-    public GameAnimation GetAnimation() { return this.ANIMATION; }
+    public void ClearOneShot() => _oneShot = null;
 
-    public bool IsAnimated() { return ANIMATION!=null; }
+    private GameAnimation LoopAnimation => IS_MOVING ? _walkAnimation : _idleAnimation;
 
-    public void UpdateAnimation() { if(this.IsAnimated()) this.ANIMATION.Update(); }
-
-    public void UpdateFrame()
-    {
-        if(!IS_MOVING) { FRAME = 0; return; }
-        
-        if(GameTimeLogic.FRAC_TICK && GameTimeLogic.FRAC % 2 == 0)
-        FRAME = (FRAME + 1) % 4;
-    }
+    public int GetFrameColumn() => (_oneShot ?? LoopAnimation).CurrentFrame;
 
     public override void Update()
     {
-        this.UpdateFrame();
-        this.UpdateAnimation();
-        this.UpdateEffect();
-    }
-    
-
-}
-
-public class GameEntityRenderConfig
-{
-    
-    public int SLICE_SIZE;
-    public int SIZE;
-    public string TEXTURE_PATH;
-    public int ANIMATION_SPEED;
-
-    public GameEntityRenderConfig(int SLICE_SIZE = 32, int SIZE = 1, string TEXTURE_PATH = null, int ANIMATION_SPEED = 0){
-        this.SLICE_SIZE = SLICE_SIZE;
-        this.SIZE = SIZE;
-        this.TEXTURE_PATH = TEXTURE_PATH;
-        this.ANIMATION_SPEED = ANIMATION_SPEED;
+        UpdateAnimation();
+        UpdateEffect();
     }
 
+    private void UpdateAnimation()
+    {
+        if (_oneShot != null)
+        {
+            _oneShot.Update(GameTimeLogic.DELTA);
+            if (!_oneShot.DONE) return;
+            _oneShot = null;
+        }
+
+        LoopAnimation.Update(GameTimeLogic.DELTA);
+    }
 }

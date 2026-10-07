@@ -1,16 +1,16 @@
 using System;
-using Microsoft.Xna.Framework;
 
-namespace ENGINE.MODELS;
+namespace PokemonTFT.Models;
 
 public class Pokemon
 {
-
     public string NAME;
+
+    public string SPRITE;
+
+    public int SPRITE_SLICE;
+
     public int MAX_HP;
-    public int LEVEL = 1;
-    public int XP = 0;
-    public int EVOLUTION_LEVEL = 100;
     public int HP;
     public int ATK;
     public int SPATK;
@@ -18,469 +18,131 @@ public class Pokemon
     public int SPDEF;
     public int SPEED;
     public int COST;
-    public int SPECIAL_COUNTER = 0;
-    public int SPECIAL_MAX = 1000;
+    public int LEVEL = 1;
+    public int XP;
+    public int EVOLUTION_LEVEL;
     public PokemonType TYPE;
-    public Pokemon EVOLUTION;
-    public bool SPECIAL_EFFECT = false;
-    public PokemonStyle STYLE = PokemonStyle.BALANCED;
-    public String EFFECT = "scratch";
+    public Pokemon? EVOLUTION;
+    public string EFFECT;
 
-    public int XPToNextLevel() => (int)(LEVEL * LEVEL * 10 * 1.5f);
+    public int SPECIAL_COUNTER;
+    public int SPECIAL_MAX = 1000;
+    public bool SPECIAL_EFFECT;
 
-    public Pokemon(string NAME, int HP, int ATK, int SPATK, int DEF, int SPDEF, int SPEED, PokemonType TYPE, int COST, int EVOLUTION_LEVEL, String EFFECT = "scratch", Pokemon EVOLUTION = null)
+    public Pokemon(
+        string NAME, int HP, int ATK, int SPATK, int DEF, int SPDEF, int SPEED,
+        PokemonType TYPE, int COST, int EVOLUTION_LEVEL,
+        string EFFECT = "scratch", Pokemon? EVOLUTION = null,
+        string? SPRITE = null, int SPRITE_SLICE = 32)
     {
-        this.NAME = NAME;
-        this.HP = HP;
-        this.MAX_HP = HP;
-        this.ATK = ATK;
-        this.SPATK = SPATK;
-        this.DEF = DEF;
-        this.SPDEF = SPDEF;
-        this.SPEED = SPEED;
-        this.TYPE = TYPE;
-        this.COST = COST;
-        this.EVOLUTION = EVOLUTION;
-        this.EVOLUTION_LEVEL= EVOLUTION_LEVEL;
-        this.EFFECT = EFFECT;
-        this.STYLE = this.GetPokemonStyle();
-        
+        this.NAME            = NAME;
+        this.SPRITE          = SPRITE ?? NAME;
+        this.SPRITE_SLICE    = SPRITE_SLICE;
+        this.HP              = HP;
+        this.MAX_HP          = HP;
+        this.ATK             = ATK;
+        this.SPATK           = SPATK;
+        this.DEF             = DEF;
+        this.SPDEF           = SPDEF;
+        this.SPEED           = SPEED;
+        this.TYPE            = TYPE;
+        this.COST            = COST;
+        this.EVOLUTION       = EVOLUTION;
+        this.EVOLUTION_LEVEL = EVOLUTION_LEVEL;
+        this.EFFECT          = EFFECT;
     }
 
-    #region HELPERS
+    #region PATHS
+    public string MovesetPath  => "Pokemons/" + SPRITE + "/moveset";
+    public string PortraitPath => "Pokemons/" + SPRITE + "/portrait";
+    public string EffectPath   => "Effects/" + EFFECT;
+    public string IconPath     => PokemonTypeAssets.IconPath(TYPE);
+    #endregion
 
-    public PokemonStyle GetPokemonStyle()
+    #region IDENTITY
+    public Pokemon Clone() => (Pokemon)MemberwiseClone();
+
+    public const int XP_PER_LEVEL_STEP = 30;
+
+    public int XPToNextLevel() => LEVEL * XP_PER_LEVEL_STEP;
+
+    public int BaseStatTotal => MAX_HP + ATK + SPATK + DEF + SPDEF + SPEED;
+
+    public PokemonStyle GetStyle()
     {
-        if (HP > 100 || DEF > 80 || SPDEF > 80)
+        bool tanky = HP > 100 || DEF > 80 || SPDEF > 80;
+        if (tanky)
         {
             if (SPDEF > DEF) return PokemonStyle.MAGIC_TANK;
             if (DEF > SPDEF) return PokemonStyle.PHYSICAL_TANK;
-            if (SPEED > 90)  return PokemonStyle.EVASION_TANK;
-            return PokemonStyle.PHYSICAL_TANK;
+            return SPEED > 90 ? PokemonStyle.EVASION_TANK : PokemonStyle.PHYSICAL_TANK;
         }
 
-        if (ATK > SPATK)
-        {
-            return PokemonStyle.PHYSICAL_FIGHTER;
-        }
+        if (ATK > SPATK) return PokemonStyle.PHYSICAL_FIGHTER;
+        if (SPATK > ATK) return SPEED > 90 ? PokemonStyle.MAGE : PokemonStyle.MAGIC_FIGHTER;
 
-        if (SPATK > ATK)
-        {
-            if (SPEED > 90) return PokemonStyle.MAGE;
-            return PokemonStyle.MAGIC_FIGHTER;
-        }
-
-        if (SPEED > 100)
-        {
-            return PokemonStyle.EVASION_TANK;
-        }
-
-
-        return PokemonStyle.BALANCED;
-    }
-
-    public string BuildPokemonHint()
-    {
-
-        string hintTexto = 
-            $"\n"+
-            $"    --- {NAME.ToUpper()} ---    \n" +
-            $"    STYLE: {this.GetPokemonStyle().ToString().Replace("_", " ")}    \n" +
-            $"    TYPE: {TYPE}\n" +
-            $"    ---------------------    \n" +
-            $"    LVL: {LEVEL} | XP: {XP}/{XPToNextLevel()}    \n" +
-            $"    HP: {HP}/{MAX_HP}    \n" +
-            $"    ATK: {ATK} | DEF: {DEF}    \n" +
-            $"    SPATK: {SPATK} | SPDEF: {SPDEF}    \n" +
-            $"    SPEED: {SPEED}    \n" +
-            $"    MANA COST: {COST}    " +
-            $"\n";
-
-        return hintTexto;
+        return SPEED > 100 ? PokemonStyle.EVASION_TANK : PokemonStyle.BALANCED;
     }
     #endregion
 
     #region XP
-    public void GainXP(int amount)
+    public int GainXP(int AMOUNT)
     {
-        XP += amount;
-        while(XP >= XPToNextLevel())
+        XP += AMOUNT;
+        int levels = 0;
+        while (XP >= XPToNextLevel())
         {
             XP -= XPToNextLevel();
             LevelUp();
+            levels++;
         }
+        return levels;
     }
 
     public void LevelUp()
     {
         LEVEL++;
-        float growth = 1.10f;
-        MAX_HP = (int)(MAX_HP * growth);
+        const float GROWTH = 1.10f;
+        MAX_HP = (int)(MAX_HP * GROWTH);
         HP     = MAX_HP;
-        ATK    = (int)(ATK   * growth);
-        SPATK  = (int)(SPATK * growth);
-        DEF    = (int)(DEF   * growth);
-        SPDEF  = (int)(SPDEF * growth);
-        SPEED  = (int)(SPEED * growth);
-        GameMusic.PlayLevelUp();
-
-        if(EVOLUTION != null && LEVEL >= EVOLUTION_LEVEL) Evolve();
+        ATK    = (int)(ATK   * GROWTH);
+        SPATK  = (int)(SPATK * GROWTH);
+        DEF    = (int)(DEF   * GROWTH);
+        SPDEF  = (int)(SPDEF * GROWTH);
+        SPEED  = (int)(SPEED * GROWTH);
     }
 
-    private void Evolve()
+    public bool CanEvolve => EVOLUTION != null && LEVEL >= EVOLUTION_LEVEL;
+
+    public string? NextMovesetPath => EVOLUTION == null ? null : "Pokemons/" + EVOLUTION.SPRITE + "/moveset";
+    public int NextSpriteSlice     => EVOLUTION?.SPRITE_SLICE ?? SPRITE_SLICE;
+    public string NextName         => EVOLUTION?.NAME ?? NAME;
+
+    public void Evolve()
     {
-        if(this.EVOLUTION == null ) return;
-        
-        this.NAME   = EVOLUTION.NAME;
-        this.ATK    = EVOLUTION.ATK;
-        this.SPATK  = EVOLUTION.SPATK;
-        this.DEF    = EVOLUTION.DEF;
-        this.SPDEF  = EVOLUTION.SPDEF;
-        this.SPEED  = EVOLUTION.SPEED;
-        this.MAX_HP = EVOLUTION.MAX_HP;
-        this.HP     = EVOLUTION.MAX_HP;
-        this.TYPE   = EVOLUTION.TYPE;
-        this.EVOLUTION = EVOLUTION.EVOLUTION;
+        Pokemon? next = EVOLUTION;
+        if (next == null) return;
+
+        NAME            = next.NAME;
+        SPRITE          = next.SPRITE;
+        SPRITE_SLICE    = next.SPRITE_SLICE;
+        ATK             = next.ATK;
+        SPATK           = next.SPATK;
+        DEF             = next.DEF;
+        SPDEF           = next.SPDEF;
+        SPEED           = next.SPEED;
+        MAX_HP          = next.MAX_HP;
+        HP              = next.MAX_HP;
+        TYPE            = next.TYPE;
+        EFFECT          = next.EFFECT;
+        EVOLUTION_LEVEL = next.EVOLUTION_LEVEL;
+        EVOLUTION       = next.EVOLUTION;
     }
     #endregion
 
-    #region COMBAT
+    #region SPECIAL
+    public void ChargeSpecial(int AMOUNT) => SPECIAL_COUNTER = Math.Min(SPECIAL_MAX, SPECIAL_COUNTER + AMOUNT);
 
-    public void ChargeAttack(int COUNT) { this.SPECIAL_COUNTER+=COUNT; }
-
-    public static float GetTypeEffectiveness(PokemonType attacker, PokemonType defender)
-    {
-        switch (attacker)
-        {
-            case PokemonType.FIRE:
-                switch (defender)
-                {
-                    case PokemonType.GRASS:
-                    case PokemonType.BUG:
-                    case PokemonType.ICE:
-                    case PokemonType.STEEL:  return 2.0f;
-                    case PokemonType.FIRE:
-                    case PokemonType.WATER:
-                    case PokemonType.ROCK:
-                    case PokemonType.DRAGON: return 0.5f;
-                }
-                break;
-            case PokemonType.WATER:
-                switch (defender)
-                {
-                    case PokemonType.FIRE:
-                    case PokemonType.GROUND:
-                    case PokemonType.ROCK:   return 2.0f;
-                    case PokemonType.WATER:
-                    case PokemonType.GRASS:
-                    case PokemonType.DRAGON: return 0.5f;
-                }
-                break;
-            case PokemonType.GRASS:
-                switch (defender)
-                {
-                    case PokemonType.WATER:
-                    case PokemonType.GROUND:
-                    case PokemonType.ROCK:   return 2.0f;
-                    case PokemonType.FIRE:
-                    case PokemonType.GRASS:
-                    case PokemonType.POISON:
-                    case PokemonType.BUG:
-                    case PokemonType.DRAGON:
-                    case PokemonType.FLY:
-                    case PokemonType.STEEL:  return 0.5f;
-                }
-                break;
-            case PokemonType.ELECTRIC:
-                switch (defender)
-                {
-                    case PokemonType.WATER:
-                    case PokemonType.FLY:    return 2.0f;
-                    case PokemonType.GRASS:
-                    case PokemonType.ELECTRIC:
-                    case PokemonType.DRAGON: return 0.5f;
-                    case PokemonType.GROUND: return 0.0f;
-                }
-                break;
-            case PokemonType.ICE:
-                switch (defender)
-                {
-                    case PokemonType.GRASS:
-                    case PokemonType.GROUND:
-                    case PokemonType.FLY:
-                    case PokemonType.DRAGON: return 2.0f;
-                    case PokemonType.FIRE:
-                    case PokemonType.WATER:
-                    case PokemonType.ICE:
-                    case PokemonType.STEEL:  return 0.5f;
-                }
-                break;
-            case PokemonType.FIGHT:
-                switch (defender)
-                {
-                    case PokemonType.NORMAL:
-                    case PokemonType.ICE:
-                    case PokemonType.ROCK:
-                    case PokemonType.DARK:
-                    case PokemonType.STEEL:  return 2.0f;
-                    case PokemonType.POISON:
-                    case PokemonType.BUG:
-                    case PokemonType.PSYCHIC:
-                    case PokemonType.FLY:
-                    case PokemonType.FAIRY:  return 0.5f;
-                    case PokemonType.GHOST:  return 0.0f;
-                }
-                break;
-            case PokemonType.POISON:
-                switch (defender)
-                {
-                    case PokemonType.GRASS:
-                    case PokemonType.FAIRY:  return 2.0f;
-                    case PokemonType.POISON:
-                    case PokemonType.GROUND:
-                    case PokemonType.ROCK:
-                    case PokemonType.GHOST:  return 0.5f;
-                    case PokemonType.STEEL:  return 0.0f;
-                }
-                break;
-            case PokemonType.GROUND:
-                switch (defender)
-                {
-                    case PokemonType.FIRE:
-                    case PokemonType.ELECTRIC:
-                    case PokemonType.POISON:
-                    case PokemonType.ROCK:
-                    case PokemonType.STEEL:  return 2.0f;
-                    case PokemonType.GRASS:
-                    case PokemonType.BUG:    return 0.5f;
-                    case PokemonType.FLY:    return 0.0f;
-                }
-                break;
-            case PokemonType.FLY:
-                switch (defender)
-                {
-                    case PokemonType.GRASS:
-                    case PokemonType.FIGHT:
-                    case PokemonType.BUG:    return 2.0f;
-                    case PokemonType.ELECTRIC:
-                    case PokemonType.ROCK:
-                    case PokemonType.STEEL:  return 0.5f;
-                }
-                break;
-            case PokemonType.PSYCHIC:
-                switch (defender)
-                {
-                    case PokemonType.FIGHT:
-                    case PokemonType.POISON: return 2.0f;
-                    case PokemonType.PSYCHIC:
-                    case PokemonType.STEEL:  return 0.5f;
-                    case PokemonType.DARK:   return 0.0f;
-                }
-                break;
-            case PokemonType.BUG:
-                switch (defender)
-                {
-                    case PokemonType.GRASS:
-                    case PokemonType.PSYCHIC:
-                    case PokemonType.DARK:   return 2.0f;
-                    case PokemonType.FIRE:
-                    case PokemonType.FIGHT:
-                    case PokemonType.FLY:
-                    case PokemonType.GHOST:
-                    case PokemonType.STEEL:
-                    case PokemonType.FAIRY:  return 0.5f;
-                }
-                break;
-            case PokemonType.ROCK:
-                switch (defender)
-                {
-                    case PokemonType.FIRE:
-                    case PokemonType.ICE:
-                    case PokemonType.FLY:
-                    case PokemonType.BUG:    return 2.0f;
-                    case PokemonType.FIGHT:
-                    case PokemonType.GROUND:
-                    case PokemonType.STEEL:  return 0.5f;
-                }
-                break;
-            case PokemonType.GHOST:
-                switch (defender)
-                {
-                    case PokemonType.GHOST:
-                    case PokemonType.PSYCHIC: return 2.0f;
-                    case PokemonType.DARK:    return 0.5f;
-                    case PokemonType.NORMAL:  return 0.0f;
-                }
-                break;
-            case PokemonType.DRAGON:
-                switch (defender)
-                {
-                    case PokemonType.DRAGON: return 2.0f;
-                    case PokemonType.STEEL:  return 0.5f;
-                    case PokemonType.FAIRY:  return 0.0f;
-                }
-                break;
-            case PokemonType.DARK:
-                switch (defender)
-                {
-                    case PokemonType.GHOST:
-                    case PokemonType.PSYCHIC: return 2.0f;
-                    case PokemonType.FIGHT:
-                    case PokemonType.DARK:
-                    case PokemonType.FAIRY:   return 0.5f;
-                }
-                break;
-            case PokemonType.STEEL:
-                switch (defender)
-                {
-                    case PokemonType.ICE:
-                    case PokemonType.ROCK:
-                    case PokemonType.FAIRY:  return 2.0f;
-                    case PokemonType.FIRE:
-                    case PokemonType.WATER:
-                    case PokemonType.ELECTRIC:
-                    case PokemonType.STEEL:  return 0.5f;
-                }
-                break;
-            case PokemonType.FAIRY:
-                switch (defender)
-                {
-                    case PokemonType.FIGHT:
-                    case PokemonType.DRAGON:
-                    case PokemonType.DARK:   return 2.0f;
-                    case PokemonType.FIRE:
-                    case PokemonType.POISON:
-                    case PokemonType.STEEL:  return 0.5f;
-                }
-                break;
-        }
-        return 1.0f; // neutral
-    }
-
-    public void Attack(Pokemon TARGET)
-    {
-        Random _random = new Random();
-        float roll     = (float)(_random.NextDouble() * 0.15f + 0.85f);
-        int effectiveATK   = ATK;
-        int effectiveSPATK = SPATK;
-        int effectiveDEF   = TARGET.DEF;
-        int effectiveSPDEF = TARGET.SPDEF;
-
-        // (FIRE BONUS) +ATK and +SPATK for all active pokemon
-        int fireBuff = GameBonusLogic.GetTypeBonusCount(PokemonType.FIRE) * 5;
-        effectiveATK   = (int)(effectiveATK   * (1 + fireBuff / 100f));
-        effectiveSPATK = (int)(effectiveSPATK * (1 + fireBuff / 100f));
-
-        // (ROCK+STEEL BONUS) percentual DEF/SPDEF bonus, capped at 64%
-        int rockCount    = GameBonusLogic.GetTypeBonusCount(PokemonType.ROCK);
-        int steelCount   = GameBonusLogic.GetTypeBonusCount(PokemonType.STEEL);
-        float sturdyBuff = Math.Min((rockCount + steelCount) * 0.08f, 0.64f);
-        effectiveDEF   = (int)(effectiveDEF   * (1 + sturdyBuff));
-        effectiveSPDEF = (int)(effectiveSPDEF * (1 + sturdyBuff));
-
-        // (NORMAL BONUS) +ATK if attacker, +DEF if target
-        int normalBuff = GameBonusLogic.GetTypeBonusCount(PokemonType.NORMAL) * 8;
-        if (this.TYPE   == PokemonType.NORMAL) effectiveATK += normalBuff;
-        if (TARGET.TYPE == PokemonType.NORMAL) effectiveDEF += normalBuff;
-
-        // (DRAGON BONUS) +100% ATK and SPATK only if unique on field
-        if (this.TYPE == PokemonType.DRAGON && GameBonusLogic.GetTypeBonusCount(PokemonType.DRAGON) == 1)
-        {
-            effectiveATK   *= 2;
-            effectiveSPATK *= 2;
-        }
-
-        // (GHOST+DARK BONUS) evasion chance cancels all damage, capped at 40%
-        int shadowCount = GameBonusLogic.GetTypeBonusCount(PokemonType.GHOST) + GameBonusLogic.GetTypeBonusCount(PokemonType.DARK);
-        if (shadowCount > 0 && (TARGET.TYPE == PokemonType.GHOST || TARGET.TYPE == PokemonType.DARK))
-        {
-            int evasionChance = Math.Min(shadowCount * 5, 40);
-            if (_random.Next(0, 100) < evasionChance) return;
-        }
-
-        // normal attack: pure physical — ATK vs DEF, ~8-10 hits to kill equivalent pokemon
-        float atkRatio    = (float)effectiveATK / effectiveDEF;
-        float totalDamage = atkRatio * 10f * roll;
-
-        // (WATER BONUS) reduces energy cost to trigger special, capped at 50%
-        int waterCount          = GameBonusLogic.GetTypeBonusCount(PokemonType.WATER);
-        float waterReduction    = Math.Min(waterCount * 0.10f, 0.50f);
-        int effectiveSpecialMax = (int)(this.SPECIAL_MAX * (1 - waterReduction));
-
-        if (this.SPECIAL_COUNTER >= effectiveSpecialMax)
-        {
-            // special attack: pure magical — SPATK vs SPDEF, hits hard
-            float spRatio       = (float)effectiveSPATK / effectiveSPDEF;
-            float specialDamage = spRatio * 35f * roll;
-            totalDamage = Math.Max(1, specialDamage);
-            this.SPECIAL_EFFECT = true;
-            SPECIAL_COUNTER     = 0;
-        }
-        else
-        {
-            this.ChargeAttack(200);
-        }
-
-        // (ELECTRIC BONUS) chance to reduce target SPEED on hit, capped at 45%
-        int electricCount = GameBonusLogic.GetTypeBonusCount(PokemonType.ELECTRIC);
-        if (electricCount > 0 && this.TYPE == PokemonType.ELECTRIC)
-        {
-            int chance = Math.Min(electricCount * 15, 45);
-            if (_random.Next(0, 100) < chance)
-                TARGET.SPEED = Math.Max(1, TARGET.SPEED - 15);
-        }
-
-        // (GRASS BONUS) regen HP once per second, capped at 2% max HP per tick
-        if (this.TYPE == PokemonType.GRASS && GameTimeLogic.SEC_TICK)
-        {
-            int grassCount = GameBonusLogic.GetTypeBonusCount(PokemonType.GRASS);
-            int regen      = Math.Min(grassCount * 5, (int)(this.MAX_HP * 0.02f));
-            this.HP        = Math.Min(this.MAX_HP, this.HP + regen);
-        }
-
-        // (BUG BONUS) handled externally via tick system
-        
-        // (TYPE EFFECTIVENESS) 2x, 0.5x or 0x multiplier
-        float typeMultiplier = GetTypeEffectiveness(this.TYPE, TARGET.TYPE);
-        if (typeMultiplier == 0.0f) return; // immune
-        totalDamage *= typeMultiplier;
-
-        TARGET.HP -= (int)Math.Max(1, totalDamage);
-    }
-
+    public bool IsAlive => HP > 0;
     #endregion
-
-}
-
-public enum PokemonType
-{
-    GRASS,
-    FIRE,
-    WATER,
-    GROUND,
-    ROCK,
-    STEEL,
-    FAIRY,
-    DARK,
-    GHOST,
-    POISON,
-    BUG,
-    DRAGON,
-    FLY,
-    ICE,
-    NORMAL,
-    PSYCHIC,
-    ELECTRIC,
-    FIGHT
-}
-
-public enum PokemonStyle
-{
-    BALANCED,
-    MAGIC_TANK,
-    PHYSICAL_TANK,
-    EVASION_TANK,
-    PHYSICAL_FIGHTER,
-    MAGE,
-    MAGIC_FIGHTER
 }

@@ -1,4 +1,4 @@
-
+﻿
 #----------------------------- Global Properties ----------------------------#
 
 /outputDir:bin/$(Platform)
@@ -188,18 +188,6 @@
 /processorParam:TextureFormat=Color
 /build:Pokemons/Charmeleon/portrait.png;Pokemons/Charmeleon/portrait
 
-#begin Pokemons/Dragonair/dragonair_40.png
-/importer:TextureImporter
-/processor:TextureProcessor
-/processorParam:ColorKeyColor=255,0,255,255
-/processorParam:ColorKeyEnabled=True
-/processorParam:GenerateMipmaps=False
-/processorParam:PremultiplyAlpha=True
-/processorParam:ResizeToPowerOfTwo=False
-/processorParam:MakeSquare=False
-/processorParam:TextureFormat=Color
-/build:Pokemons/Dragonair/dragonair_40.png
-
 #begin Pokemons/Dragonair/moveset.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -223,18 +211,6 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:Pokemons/Dragonair/portrait.png
-
-#begin Pokemons/Dragonite/dragonite_40.png
-/importer:TextureImporter
-/processor:TextureProcessor
-/processorParam:ColorKeyColor=255,0,255,255
-/processorParam:ColorKeyEnabled=True
-/processorParam:GenerateMipmaps=False
-/processorParam:PremultiplyAlpha=True
-/processorParam:ResizeToPowerOfTwo=False
-/processorParam:MakeSquare=False
-/processorParam:TextureFormat=Color
-/build:Pokemons/Dragonite/dragonite_40.png
 
 #begin Pokemons/Dragonite/moveset.png
 /importer:TextureImporter

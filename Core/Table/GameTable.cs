@@ -1,117 +1,201 @@
 using System;
 using System.Collections.Generic;
-using ENGINE.MODELS;
-using GAME.CORE;
 using Microsoft.Xna.Framework;
+using PokemonTFT.Core;
+using PokemonTFT.Data;
+using PokemonTFT.Logic;
+using PokemonTFT.Models;
+using PokemonTFT.UI;
 
-namespace GAME.TABLE;
+namespace PokemonTFT.Table;
 
 public static class GameTable
 {
-    public static List<GameElement> TABLE_ELEMENTS = new List<GameElement>();
+    public const int TILE_COLUMNS = 20;
+    private const int BORDER_TILES = 1;
+
+    private const int ENEMY_ROWS = 3;
+
+    private const int PLAYER_ROW_FIRST = 3;
+    private const int PLAYER_ROW_LAST  = 6;
+
+    private const int MAX_ENEMIES = 7;
+
+    private static readonly Rectangle TS_TILE = new(24, 24, 24, 24);
+    private static readonly List<GameElement> TABLE_ELEMENTS = [];
+    private static readonly List<GameTableElement> FREE_ENEMY_TILES = [];
+
+    public static IReadOnlyList<GameElement> TableElements => TABLE_ELEMENTS;
+    public static List<GameElement> GetTable() => TABLE_ELEMENTS;
+
     public static int TABLE_SIZE_X { get; private set; }
     public static int TABLE_SIZE_Y { get; private set; }
-    private static readonly Rectangle TS_TILE = new Rectangle(24, 24, 24, 24);
-    public static List<GameElement> GetTable() { return GameTable.TABLE_ELEMENTS; }
+    public static int TILE_SIZE { get; private set; } = 1;
 
-    //ENEMY TEAM
-    private static int ENEMY_SIZE = Math.Min(1 + (GameGlobals.LEVEL - 1), 7);
+    public static Rectangle PlayArea { get; private set; }
 
     public static void Initialize()
     {
-        int totalTiles = 20;
-        int tileSize   = GameRenderer.GetScreenWidth() / totalTiles;
-        int yTiles     = GameRenderer.GetScreenHeight() / tileSize;
-        TABLE_SIZE_X = totalTiles - 2;
-        TABLE_SIZE_Y = yTiles - 2;
+        TABLE_ELEMENTS.Clear();
+
+        int tileSize = GameRenderer.GetScreenWidth() / TILE_COLUMNS;
+        int yTiles   = GameRenderer.GetScreenHeight() / tileSize;
+
+        TABLE_SIZE_X = TILE_COLUMNS - BORDER_TILES * 2;
+        TABLE_SIZE_Y = Math.Max(1, yTiles - BORDER_TILES * 2);
+        TILE_SIZE    = tileSize;
+        PlayArea     = new Rectangle(tileSize, tileSize, TABLE_SIZE_X * tileSize, TABLE_SIZE_Y * tileSize);
+
         for (int y = 0; y < TABLE_SIZE_Y; y++)
         {
             for (int x = 0; x < TABLE_SIZE_X; x++)
             {
-                int posX = tileSize + (tileSize * x);
-                int posY = tileSize + (tileSize * y);
                 var element = new GameTableElement(
-                    (short)posX, (short)posY,
-                    (short)tileSize, (short)tileSize, true);
-                
-                element.TABLE_POSITION_X = x;
-                element.TABLE_POSITION_Y = y;
-                element.CONFIG = new GameInterfaceConfig(true, false);
-                element.PLAYER_OWN = (y >= 3 && y <= 6);
-                GameRendererConfig eConfig = new GameRendererConfig();
-                eConfig.RECTANGLE = TS_TILE;
-                eConfig.TEXTURE_PATH = "Environment/tileset";
-                element.SetRendererConfig(eConfig);
+                    tileSize + tileSize * x,
+                    tileSize + tileSize * y,
+                    tileSize, tileSize, VISIBLE: true)
+                {
+                    TABLE_POSITION_X = x,
+                    TABLE_POSITION_Y = y,
+                    HOVERABLE        = true,
+                    PLAYER_OWN       = y >= PLAYER_ROW_FIRST && y <= Math.Min(PLAYER_ROW_LAST, TABLE_SIZE_Y - 1),
+                    ENEMY_ZONE       = y < Math.Min(ENEMY_ROWS, TABLE_SIZE_Y)
+                };
+
+                element.SetRendererConfig(GameRendererConfig.Sprite("Environment/tileset", TS_TILE));
                 TABLE_ELEMENTS.Add(element);
             }
         }
     }
 
-    //ENEMY TEAM GENERATION
-
-    private static List<Pokemon> GetRandomDecks()
+    public static void Rebuild()
     {
-        Random _random = new Random();
-        GameDeck.PokemonDecks.Clear();
-        List<Pokemon> _pkmList = new List<Pokemon>();
+        var occupied = new List<(int X, int Y, PokemonEntity ENTITY)>();
 
-        for (int i = 0; i < GameTable.ENEMY_SIZE; i++)
+        for (int i = 0; i < TABLE_ELEMENTS.Count; i++)
         {
-            int index = _random.Next(0, PokemonDatabase.PokemonList.Count);
-            _pkmList.Add(PokemonDatabase.PokemonList[index]);
+            if (TABLE_ELEMENTS[i] is GameTableElement { } tile && tile.GetPokemon() is { } pokemon)
+                occupied.Add((tile.TABLE_POSITION_X, tile.TABLE_POSITION_Y, pokemon));
         }
 
-        return _pkmList;
+        GameTableElement.GetTableElements().Clear();
+        Initialize();
+
+        foreach ((int x, int y, PokemonEntity entity) in occupied)
+        {
+            GameTableElement? tile = FindTile(x, y);
+            tile?.InsertPokemon(entity);
+        }
     }
-    
+
+    private static GameTableElement? FindTile(int X, int Y)
+    {
+        for (int i = 0; i < TABLE_ELEMENTS.Count; i++)
+        {
+            if (TABLE_ELEMENTS[i] is GameTableElement tile
+                && tile.TABLE_POSITION_X == X && tile.TABLE_POSITION_Y == Y) return tile;
+        }
+        return null;
+    }
+
+    #region ZONE FLASH
+    private const double FLASH_SPEED = 14.0;
+
+    private static double _flashLeft;
+    private static double _flashElapsed;
+    private static Color _flashColor = Color.White;
+    private static bool _flashPlayerZone;
+
+    public static void FlashZone(bool PLAYER_ZONE, Color COLOR, double SECONDS)
+    {
+        _flashPlayerZone = PLAYER_ZONE;
+        _flashColor      = COLOR;
+        _flashLeft       = SECONDS;
+        _flashElapsed    = 0;
+    }
+
+    public static void UpdateFlash(double DELTA)
+    {
+        if (_flashLeft <= 0) return;
+
+        _flashLeft    -= DELTA;
+        _flashElapsed += DELTA;
+        if (_flashLeft < 0) _flashLeft = 0;
+    }
+
+    public static void ClearFlash() => _flashLeft = 0;
+
+    public static bool TryGetZoneFlash(GameTableElement TILE, out Color COLOR)
+    {
+        COLOR = Color.White;
+        if (_flashLeft <= 0) return false;
+
+        bool inZone = _flashPlayerZone ? TILE.PLAYER_OWN : TILE.ENEMY_ZONE;
+        if (!inZone) return false;
+
+        float pulse = 0.5f + 0.5f * (float)Math.Sin(_flashElapsed * FLASH_SPEED);
+        COLOR = Color.Lerp(Color.White, _flashColor, pulse);
+        return true;
+    }
+    #endregion
+
+    #region ENEMY TEAM
+    private static List<Pokemon> BuildEnemyPool(int SIZE)
+    {
+        int band = Balance.EnemyStatBand(GameGlobals.LEVEL);
+        var pool = new List<Pokemon>(SIZE);
+        for (int i = 0; i < SIZE; i++) pool.Add(PokemonDatabase.RandomInBand(band));
+        return pool;
+    }
+
+    private static void CollectFreeEnemyTiles()
+    {
+        FREE_ENEMY_TILES.Clear();
+        int enemyRows = Math.Min(ENEMY_ROWS, TABLE_SIZE_Y);
+
+        for (int i = 0; i < TABLE_ELEMENTS.Count; i++)
+        {
+            if (TABLE_ELEMENTS[i] is not GameTableElement tile) continue;
+            if (tile.TABLE_POSITION_Y >= enemyRows) continue;
+            if (tile.HasPokemon()) continue;
+            FREE_ENEMY_TILES.Add(tile);
+        }
+
+        for (int i = FREE_ENEMY_TILES.Count - 1; i > 0; i--)
+        {
+            int j = Random.Shared.Next(i + 1);
+            (FREE_ENEMY_TILES[i], FREE_ENEMY_TILES[j]) = (FREE_ENEMY_TILES[j], FREE_ENEMY_TILES[i]);
+        }
+    }
+
     public static void InitializeEnemyTeam()
     {
-        int count      = GameGlobals.LEVEL <= 4 ? 1 : Math.Min(GameGlobals.LEVEL - 3, 7);
-        int enemyLevel = Math.Max(1, GameGlobals.LEVEL - 2);
+        int count      = Math.Min(Balance.EnemyCount(GameGlobals.LEVEL), MAX_ENEMIES);
+        int enemyLevel = Balance.EnemyLevel(GameGlobals.LEVEL);
 
-        List<Pokemon> _pkmList = GetRandomDecks();
-        Random _random = new Random();
+        List<Pokemon> pool = BuildEnemyPool(count);
+        CollectFreeEnemyTiles();
 
-        for (int i = 0; i < count; i++)
+        int placed = Math.Min(count, FREE_ENEMY_TILES.Count);
+        for (int i = 0; i < placed; i++)
         {
-            Pokemon original = _pkmList[_random.Next(0, _pkmList.Count)];
-            Pokemon scaled   = new Pokemon(
-                original.NAME,
-                original.MAX_HP,
-                original.ATK,
-                original.SPATK,
-                original.DEF,
-                original.SPDEF,
-                original.SPEED,
-                original.TYPE,
-                original.COST,
-                original.EVOLUTION_LEVEL,
-                original.EFFECT
-            );
+            Pokemon scaled = pool[Random.Shared.Next(pool.Count)].Clone();
+            for (int level = 1; level < enemyLevel; level++) scaled.LevelUp();
 
-            for (int lvl = 1; lvl < enemyLevel; lvl++)
-                scaled.LevelUp();
-
-            bool repeat = true;
-            do {
-                int index = _random.Next(0, 53);
-                GameTableElement tElement = GameTable.TABLE_ELEMENTS[index] as GameTableElement;
-                if (!tElement.HasPokemon())
-                {
-                    PokemonEntity _pkmEntity    = new PokemonEntity(0, 0, 32, 32, true);
-                    _pkmEntity.POKEMON          = scaled;
-                    _pkmEntity.ENEMY            = true;
-                    GameEntityRenderConfig cfg  = new GameEntityRenderConfig();
-                    cfg.TEXTURE_PATH            = "Pokemons/" + scaled.NAME + "/moveset";
-                    cfg.SLICE_SIZE              = 32;
-                    cfg.SIZE                    = 3;
-                    cfg.ANIMATION_SPEED         = 1;
-                    _pkmEntity.SetEntityConfig(cfg);
-                    tElement.InsertPokemon(_pkmEntity);
-                    repeat = false;
-                }
-            } while (repeat);
+            var entity = new PokemonEntity(0, 0) { POKEMON = scaled, ENEMY = true };
+            FREE_ENEMY_TILES[i].InsertPokemon(entity);
         }
     }
 
+    public static void ClearEnemies()
+    {
+        GameTableElement.RemoveEnemies();
+
+        for (int i = 0; i < TABLE_ELEMENTS.Count; i++)
+        {
+            if (TABLE_ELEMENTS[i] is GameTableElement tile && tile.GetPokemon() is { ENEMY: true })
+                tile.ClearPokemon();
+        }
+    }
+    #endregion
 }

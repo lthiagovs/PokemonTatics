@@ -1,110 +1,129 @@
-using System;
 using System.Collections.Generic;
-using GAME.CORE;
-using GAME.UI;
 using Microsoft.Xna.Framework;
+using PokemonTFT.Core;
+using PokemonTFT.Logic;
+using PokemonTFT.Table;
 
-public class GameTableElement : GameInterfaceElement
+namespace PokemonTFT.UI;
+
+public sealed class GameTableElement : GameInterfaceElement
 {
+    private static readonly Color DROP_TARGET_TINT = new(180, 255, 180);
 
-    private static List<GameElement> TABLE_ELEMENTS = new List<GameElement>();
+    private static readonly List<GameElement> ENTITIES = [];
 
-    public int TABLE_POSITION_X = 0;
-    public int TABLE_POSITION_Y = 0;
+    public int TABLE_POSITION_X;
+    public int TABLE_POSITION_Y;
+    public bool PLAYER_OWN;
 
-    public GameTableElement(short POS_X, short POS_Y, short SIZE_X, short SIZE_Y, bool VISIBLE, GameInterfaceElement PARENT = null) : 
-    base(POS_X, POS_Y, SIZE_X, SIZE_Y, VISIBLE, PARENT) { }
+    public bool ENEMY_ZONE;
 
-    private PokemonEntity POKEMON_ENTITY = null;
+    private PokemonEntity? _pokemon;
 
-    public bool PLAYER_OWN = false;
+    public GameTableElement(int POS_X, int POS_Y, int SIZE_X, int SIZE_Y, bool VISIBLE, GameInterfaceElement? PARENT = null)
+        : base(POS_X, POS_Y, SIZE_X, SIZE_Y, VISIBLE, PARENT) { }
 
-    public static List<GameElement> GetTableElements() { return GameTableElement.TABLE_ELEMENTS; }
+    #region ENTITY REGISTRY
+    public static List<GameElement> GetTableElements() => ENTITIES;
 
-    public bool HasPokemon() { return POKEMON_ENTITY!=null; }
+    public static void RegisterEntity(PokemonEntity ENTITY) => ENTITIES.Add(ENTITY);
 
-    public PokemonEntity GetPokemon() { return POKEMON_ENTITY; }
+    public static void UnregisterEntity(PokemonEntity ENTITY) => ENTITIES.Remove(ENTITY);
 
-    public void InsertPokemon(PokemonEntity POKEMON) { 
-        GameEntityRenderConfig cfg = new GameEntityRenderConfig();
-                cfg.TEXTURE_PATH   = "Pokemons/" + POKEMON.POKEMON.NAME + "/moveset";
-                cfg.SLICE_SIZE     = 32;
-                cfg.SIZE           = 3;
-                cfg.ANIMATION_SPEED = 1;
-        
-        Point _pkmPoint = new Point(
-                    this.GetRectangle().X + (this.GetRectangle().Width  / 2) - (cfg.SLICE_SIZE * cfg.SIZE / 2),
-                    this.GetRectangle().Y + (this.GetRectangle().Height / 2) - (cfg.SLICE_SIZE * cfg.SIZE / 2));
-        POKEMON.SetPosition(_pkmPoint);
-        POKEMON.START = _pkmPoint;
-        
+    public static void RemoveEnemies() => ENTITIES.RemoveAll(e => e is PokemonEntity { ENEMY: true });
+    #endregion
+
+    #region SLOT
+    public bool HasPokemon() => _pokemon != null;
+
+    public PokemonEntity? GetPokemon() => _pokemon;
+
+    public void ClearPokemon() => _pokemon = null;
+
+    public void InsertPokemon(PokemonEntity POKEMON)
+    {
+        Rectangle bounds = GetRectangle();
+        int drawSize = POKEMON.GetEntityConfig().DrawSize;
+
+        var position = new Point(
+            bounds.X + bounds.Width  / 2 - drawSize / 2,
+            bounds.Y + bounds.Height / 2 - drawSize / 2);
+
+        POKEMON.SetPosition(position);
+        POKEMON.START     = position;
         POKEMON.DIRECTION = GameDirection.BOTTOM_LEFT;
 
-        if(POKEMON!=null) this.POKEMON_ENTITY = POKEMON; 
-        GameTableElement.TABLE_ELEMENTS.Add(POKEMON);
+        _pokemon = POKEMON;
+        RegisterEntity(POKEMON);
     }
-
-    public void ClearPokemon() { this.POKEMON_ENTITY = null; }
+    #endregion
 
     public override void Update()
     {
+        base.Update();
 
-        this.GetRendererConfig().COLOR = COLOR_STATE;
-        this.GetRendererConfig().IS_HOVERING = false;
+        GetRendererConfig().IS_HOVERING = false;
 
-        if(!this.PLAYER_OWN) return;
+        if (GameTable.TryGetZoneFlash(this, out Color flash)) GetRendererConfig().COLOR = flash;
 
-        // MOUSE DETECTION
-        if(this.GetRectangle().Intersects(GameMouse.GetRectangle())) {
-            
-            // HOVER
-            if(this.CONFIG.IsHover()) 
-            { 
-                this.GetRendererConfig().IS_HOVERING = true;
-            }
+        if (!PLAYER_OWN) return;
 
-            //PLACE POKEMON
-            if(GameMouse.LeftPressed() && GameMouse.IsCarryElement() && PLAYER_OWN)
-            {
-                if(GameGlobals.GAME_STARTED) return;
-                if(!(GameMouse.GetCarryElement() is PokemonEntity)) return;
-                if(this.POKEMON_ENTITY!!=null) return;
-                PokemonEntity _source = GameMouse.GetCarryElement() as PokemonEntity;
-                GameMouse.ClearCarryElement();
+        bool carrying = GameMouse.GetCarry() is PokemonEntity;
+        bool canPlace = carrying && _pokemon == null;
+        bool canPick  = !GameMouse.HasCarry() && _pokemon != null;
 
-                PokemonEntity _pokemon = new PokemonEntity(0, 0, 32, 32, true);
-                _pokemon.POKEMON    = _source.POKEMON;
-                _pokemon.DIRECTION  = _source.DIRECTION;
-                _pokemon.IS_MOVING  = _source.IS_MOVING;
+        if (canPlace && !GameGlobals.GAME_STARTED)
+            GetRendererConfig().COLOR = DROP_TARGET_TINT;
 
-                this.POKEMON_ENTITY = _pokemon;
+        if (!IsHovered()) return;
 
-                GameEntityRenderConfig cfg = new GameEntityRenderConfig();
-                cfg.TEXTURE_PATH   = "Pokemons/" + _pokemon.POKEMON.NAME + "/moveset";
-                cfg.SLICE_SIZE     = 32;
-                cfg.SIZE           = 3;
-                cfg.ANIMATION_SPEED = 1;
+        GetRendererConfig().IS_HOVERING = true;
 
-                this.POKEMON_ENTITY.SetPosition(new Point(
-                    this.GetRectangle().X + (this.GetRectangle().Width  / 2) - (cfg.SLICE_SIZE * cfg.SIZE / 2),
-                    this.GetRectangle().Y + (this.GetRectangle().Height / 2) - (cfg.SLICE_SIZE * cfg.SIZE / 2)
-                ));
-                this.POKEMON_ENTITY.START = this.POKEMON_ENTITY.GetPosition();
-                this.POKEMON_ENTITY.SetEntityConfig(cfg);
-                this.POKEMON_ENTITY.ENEMY = false;
-                GameTableElement.TABLE_ELEMENTS.Add(this.POKEMON_ENTITY);
-            } else if (GameMouse.LeftPressed() && !GameMouse.IsCarryElement() && this.POKEMON_ENTITY!=null)
-            {
-                this.POKEMON_ENTITY.DIRECTION = GameDirection.TOP_RIGHT;
-                GameMouse.SetCarryElement(PokemonEntity.Copy(this.POKEMON_ENTITY));
-                TABLE_ELEMENTS.Remove(this.POKEMON_ENTITY);
-                this.POKEMON_ENTITY = null;
-            }
-            return;
+        if (!GameGlobals.GAME_STARTED && (canPlace || canPick)) GameMouse.RequestHoverCursor();
 
-        }
+        if (!GameMouse.LeftPressed()) return;
 
+        if (GameMouse.GetCarry() is PokemonEntity carried) PlaceCarried(carried);
+        else if (_pokemon != null) PickUp();
     }
 
+    private void PlaceCarried(PokemonEntity CARRIED)
+    {
+        if (GameGlobals.GAME_STARTED) return;
+        if (_pokemon != null) return;
 
+        GameMouse.ConsumeClick();
+        GameMouse.ClearCarry();
+
+        var placed = new PokemonEntity(0, 0)
+        {
+            POKEMON   = CARRIED.POKEMON,
+            DIRECTION = CARRIED.DIRECTION,
+            ENEMY     = false,
+            PURCHASED = CARRIED.PURCHASED,
+            CARRIED   = false
+        };
+
+        InsertPokemon(placed);
+        placed.SetEffect(new RenderEffect(RenderEffectType.FADE_IN, 0.18f));
+    }
+
+    private void PickUp()
+    {
+        if (GameGlobals.GAME_STARTED) return;
+
+        GameMouse.ConsumeClick();
+
+        PokemonEntity picked = _pokemon!;
+        picked.DIRECTION = GameDirection.TOP_RIGHT;
+
+        PokemonEntity carry = PokemonEntity.Copy(picked);
+        carry.PURCHASED = false;
+        carry.CARRIED   = true;
+        carry.SetEffect(new RenderEffect(RenderEffectType.FADE_IN, 0.15f));
+
+        GameMouse.SetCarry(carry);
+        UnregisterEntity(picked);
+        _pokemon = null;
+    }
 }
