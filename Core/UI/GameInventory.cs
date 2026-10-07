@@ -126,7 +126,7 @@ public static class GameInventory
         int width = PER_ROW * SLOT + (PER_ROW - 1) * GAP + UIFactory.PAD * 2;
         int height = HEADER + rows * SLOT + (rows - 1) * GAP + UIFactory.PAD * 2 + FOOTER;
 
-        int top = Math.Max(MARGIN, GameRenderer.GetScreenHeight() / 2 - height / 2);
+        int top = Math.Max(GameHud.Bottom + MARGIN, GameRenderer.GetScreenHeight() / 2 - height / 2);
         GameInterfaceElement panel = UIFactory.Panel(MARGIN, top, width, height);
         ELEMENTS.Add(panel);
 

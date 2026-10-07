@@ -340,7 +340,8 @@ ICON_CATEGORIES = ["action", "navigation", "av", "content", "image", "toggle",
 
 ICON_NAMES = ["settings", "close", "refresh", "play_arrow", "favorite", "bolt",
               "shield", "star", "info", "volume_up", "volume_off", "music_note",
-              "fullscreen", "fullscreen_exit", "power_settings_new", "check"]
+              "fullscreen", "fullscreen_exit", "power_settings_new", "check",
+              "leaderboard", "emoji_events"]
 
 ICON_VARIANTS = ((48, 16, 3), (36, 12, 3), (24, 12, 2))
 ICON_CACHE = os.path.join(ROOT, "tools", ".cache", "icons")

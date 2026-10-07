@@ -48,4 +48,10 @@
   <Icon name="check" size="48" x="252" y="252" w="36" h="30" />
   <Icon name="check" size="36" x="302" y="252" w="30" h="24" />
   <Icon name="check" size="24" x="352" y="252" w="20" h="16" />
+  <Icon name="leaderboard" size="48" x="2" y="302" w="42" h="36" />
+  <Icon name="leaderboard" size="36" x="52" y="302" w="30" h="30" />
+  <Icon name="leaderboard" size="24" x="102" y="302" w="20" h="20" />
+  <Icon name="emoji_events" size="48" x="152" y="302" w="36" h="36" />
+  <Icon name="emoji_events" size="36" x="202" y="302" w="30" h="30" />
+  <Icon name="emoji_events" size="24" x="252" y="302" w="20" h="20" />
 </Icons>

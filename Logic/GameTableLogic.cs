@@ -219,6 +219,7 @@ public static class GameTableLogic
 
         int damage = Mitigate(DEFENDER, dealt);
 
+        BattleStats.Hit(ATTACKER, DEFENDER, Math.Min(damage, Math.Max(0, DEFENDER.POKEMON.HP)));
         DEFENDER.POKEMON.HP -= damage;
 
         ShowDamage(ATTACKER, DEFENDER, result, damage);
@@ -229,6 +230,7 @@ public static class GameTableLogic
         if (DEFENDER.POKEMON.HP > 0) return;
 
         Kill(DEFENDER);
+        BattleStats.Kill(ATTACKER);
         BattleTactics.NotifyKill(ATTACKER);
         int bounty = ItemLogic.Value(ATTACKER.POKEMON, ItemEffect.MANA_ON_KILL);
         if (bounty > 0 && !ATTACKER.ENEMY) GameGlobals.ChangeMana(bounty);
@@ -331,7 +333,9 @@ public static class GameTableLogic
 
         int drained = DAMAGE + (ItemLogic.HasCombo(attacker, ItemCombo.SIPHON) ? splashDealt : 0);
         int healed = Math.Max(1, drained * lifesteal / 100);
+        int before = attacker.HP;
         attacker.HP = Math.Min(attacker.MAX_HP, attacker.HP + healed);
+        BattleStats.Heal(ATTACKER, attacker.HP - before);
         FloatingText.SpawnStatus($"+{healed}", HeadPosition(ATTACKER), COLOR_HEAL);
         SpawnClip("sparkle", GameEffectType.TARGET, ATTACKER.Center, ATTACKER, COLOR_HEAL);
     }
@@ -355,11 +359,13 @@ public static class GameTableLogic
         return BattleTactics.Mitigate(TARGET, DAMAGE);
     }
 
-    private static int HitSecondary(PokemonEntity FOE, int DAMAGE, TypeEffect EFFECT, bool STATUS)
+    private static int HitSecondary(PokemonEntity ATTACKER, PokemonEntity FOE, int DAMAGE, TypeEffect EFFECT,
+                                    bool STATUS)
     {
         if (FOE.POKEMON == null || DAMAGE <= 0) return 0;
 
         DAMAGE = Mitigate(FOE, DAMAGE);
+        BattleStats.Hit(ATTACKER, FOE, Math.Min(DAMAGE, Math.Max(0, FOE.POKEMON.HP)));
         FOE.POKEMON.HP -= DAMAGE;
         FloatingText.SpawnDamage(DAMAGE, HeadPosition(FOE), COLOR_SPLASH, false);
         FOE.SetEffect(new RenderEffect(RenderEffectType.FLASH, 0.25f));
@@ -367,7 +373,10 @@ public static class GameTableLogic
         if (STATUS && EFFECT.CHANCE > 0 && Random.Shared.Next(100) < EFFECT.CHANCE)
             ApplyStatus(FOE, EFFECT.STATUS);
 
-        if (FOE.POKEMON.HP <= 0) Kill(FOE);
+        if (FOE.POKEMON.HP > 0) return DAMAGE;
+
+        Kill(FOE);
+        BattleStats.Kill(ATTACKER);
         return DAMAGE;
     }
 
@@ -422,7 +431,7 @@ public static class GameTableLogic
             float dy = foe.Center.Y - CENTER.Y;
             if (dx * dx + dy * dy > RADIUS * RADIUS) continue;
 
-            dealt += HitSecondary(foe, DAMAGE, EFFECT, STATUS);
+            dealt += HitSecondary(ATTACKER, foe, DAMAGE, EFFECT, STATUS);
         }
 
         return dealt;
@@ -454,7 +463,7 @@ public static class GameTableLogic
 
             if (dx / distance * forwardX + dy / distance * forwardY < limit) continue;
 
-            HitSecondary(foe, DAMAGE, EFFECT, STATUS);
+            HitSecondary(ATTACKER, foe, DAMAGE, EFFECT, STATUS);
         }
     }
 
@@ -477,6 +486,7 @@ public static class GameTableLogic
             if (healed <= 0) continue;
 
             entity.POKEMON.HP += healed;
+            BattleStats.Heal(entity, healed);
             FloatingText.SpawnStatus($"+{healed}", HeadPosition(entity), COLOR_HEAL);
         }
     }
@@ -491,6 +501,7 @@ public static class GameTableLogic
             int damage = entity.STATUS.Update(GameTimeLogic.DELTA, entity.POKEMON.MAX_HP);
             if (damage <= 0) continue;
 
+            BattleStats.Hit(null, entity, Math.Min(damage, Math.Max(0, entity.POKEMON.HP)));
             entity.POKEMON.HP -= damage;
             FloatingText.SpawnDamage(damage, HeadPosition(entity), COLOR_STATUS, false);
             if (entity.POKEMON.HP <= 0) Kill(entity);
@@ -595,6 +606,7 @@ public static class GameTableLogic
 
         GameGlobals.ChangeMana(Balance.ManaReward(GameGlobals.LEVEL, !defeat));
 
+        BattleStats.Finish(GameGlobals.LEVEL, !defeat, ALL);
         ResetBoardAfterRound(defeat ? Balance.XP_ON_LOSS : Balance.XP_ON_WIN);
 
         GameEffect.Clear();
@@ -679,6 +691,7 @@ public static class GameTableLogic
         _pendingDrop = null;
         _bossRewarded = false;
         ItemLogic.Clear();
+        BattleStats.Clear();
         UI.GameInventory.Refresh();
         EndRun();
     }
