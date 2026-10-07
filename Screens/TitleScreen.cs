@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using PokemonTFT.Core;
+using PokemonTFT.Data;
 using PokemonTFT.UI;
 
 namespace PokemonTFT.Screens;
@@ -15,29 +16,32 @@ public static class TitleScreen
 
     private const float TITLE_Y    = 0.12f;
     private const float SUBTITLE_Y = 0.22f;
-    private const float BUTTON_Y   = 0.52f;
     private const float HINT_Y     = 0.62f;
+    private const float MENU_Y     = 0.56f;
 
     private const float TITLE_WIDTH_RATIO = 0.42f;
 
-    private const int PLAY_SRC_W = 30;
-    private const int PLAY_SRC_H = 32;
-    private const int PLAY_SCALE = 3;
+    private const int MENU_W   = 300;
+    private const int MENU_GAP = 22;
 
     private static readonly List<GameElement> TITLE_ELEMENTS = [];
+    private static readonly List<GameElement> MENU = [];
 
     public static IReadOnlyList<GameElement> GetElements() => TITLE_ELEMENTS;
+
+    public static IReadOnlyList<GameElement> GetMenu() => MENU;
 
     public static void Initialize()
     {
         TITLE_ELEMENTS.Clear();
+        MENU.Clear();
 
         int width  = GameRenderer.GetScreenWidth();
         int height = GameRenderer.GetScreenHeight();
 
         BuildBackground(width, height);
         BuildTitle(width, height);
-        BuildPlayButton(width, height);
+        BuildMenu(width, height);
     }
 
     private static void BuildBackground(int WIDTH, int HEIGHT)
@@ -77,32 +81,68 @@ public static class TitleScreen
         TITLE_ELEMENTS.Add(subtitle);
     }
 
-    private static void BuildPlayButton(int WIDTH, int HEIGHT)
+    private static void BuildMenu(int WIDTH, int HEIGHT)
     {
-        int buttonW = PLAY_SRC_W * PLAY_SCALE;
-        int buttonH = PLAY_SRC_H * PLAY_SCALE;
+        int y = (int)(HEIGHT * MENU_Y);
 
-        var play = new GameButton(
-            WIDTH / 2 - buttonW / 2,
-            (int)(HEIGHT * BUTTON_Y) - buttonH / 2,
-            buttonW, buttonH, VISIBLE: true)
+        if (PokemonDatabase.Ready)
         {
-            HOVERABLE = true,
-            ON_CLICK  = () => GameGlobals.STATE = GameState.GAME
-        };
-        play.SetRendererConfig(GameRendererConfig.Sprite(
-            "UI/Icons/play_button", new Rectangle(0, 0, PLAY_SRC_W, PLAY_SRC_H)));
-        TITLE_ELEMENTS.Add(play);
+            y = AddButton("START", Start, WIDTH, y) + MENU_GAP;
+        }
+        else
+        {
+            y = BuildRosterWarning(WIDTH, HEIGHT) + MENU_GAP;
+        }
 
-        const string hint = "CLICK TO START";
-        float hintScale = System.Math.Max(1f, GameFonts.MEDIUM - 1f);
-        Vector2 hintSize = GameFonts.Measure(hint, hintScale);
+        AddButton("OPTIONS", UI.SettingsModal.Open, WIDTH, y);
+    }
+
+    private static int AddButton(string TEXT, System.Action ON_CLICK, int WIDTH, int Y)
+    {
+        GameButton button = UIFactory.Button(TEXT, ON_CLICK, UITheme.GLASS, UITheme.TEXT, MENU_W);
+        button.SetPosition(new Point(WIDTH / 2 - button.SIZE_X / 2, Y));
+        MENU.Add(button);
+        return Y + button.SIZE_Y;
+    }
+
+    private static void Start()
+    {
+        if (!PokemonDatabase.Ready) return;
+        GameGlobals.STATE = GameState.GAME;
+    }
+
+    private static int BuildRosterWarning(int WIDTH, int HEIGHT)
+    {
+        string problem = PokemonDatabase.PROBLEM.Length > 0
+            ? PokemonDatabase.PROBLEM
+            : "NO POKEMON AVAILABLE";
+
+        float scale = System.Math.Max(1f, GameFonts.MEDIUM - 1f);
+        int y = (int)(HEIGHT * HINT_Y);
+
+        Add("NO ROSTER LOADED", WIDTH, y, scale, new Color(226, 86, 72));
+        y += (int)GameFonts.Measure("X", scale).Y + 12;
+
+        foreach (string line in UIFactory.Wrap(problem, (int)(WIDTH * 0.7f), GameFonts.BODY))
+        {
+            Add(line, WIDTH, y, GameFonts.BODY, Color.White);
+            y += (int)GameFonts.Measure("X", GameFonts.BODY).Y + 6;
+        }
+
+        y += 14;
+        Add("ADD POKEMON TO Data/pokemons.xml AND RESTART", WIDTH, y, GameFonts.BODY,
+            new Color(198, 206, 220));
+
+        return y + (int)GameFonts.Measure("X", GameFonts.BODY).Y;
+    }
+
+    private static void Add(string TEXT, int WIDTH, int Y, float SCALE, Color COLOR)
+    {
+        Vector2 size = GameFonts.Measure(TEXT, SCALE);
 
         var label = new GameInterfaceElement(
-            (int)(WIDTH / 2f - hintSize.X / 2f),
-            (int)(HEIGHT * HINT_Y),
-            (int)hintSize.X, (int)hintSize.Y, VISIBLE: true);
-        label.SetRendererConfig(GameRendererConfig.Label(hint, Color.White, hintScale, TEXT_SHADOW: 2));
+            (int)(WIDTH / 2f - size.X / 2f), Y, (int)size.X, (int)size.Y, VISIBLE: true);
+        label.SetRendererConfig(GameRendererConfig.Label(TEXT, COLOR, SCALE, TEXT_SHADOW: 2));
         TITLE_ELEMENTS.Add(label);
     }
 }

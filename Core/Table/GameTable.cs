@@ -11,22 +11,23 @@ namespace PokemonTFT.Table;
 
 public static class GameTable
 {
-    public const int TILE_COLUMNS = 20;
-    private const int BORDER_TILES = 1;
+    public const int TILE_COLUMNS = 40;
 
-    private const int ENEMY_ROWS = 3;
+    public const int UI_COLUMNS = 20;
+    private const int BORDER_TILES = 2;
 
-    private const int PLAYER_ROW_FIRST = 3;
-    private const int PLAYER_ROW_LAST  = 6;
+    private const int DECK_ROWS = 3;
 
-    private const int MAX_ENEMIES = 7;
+    private const int ENEMY_ROWS = 4;
+
+    private const int PLAYER_ROW_FIRST = 8;
+    private const int PLAYER_ROW_LAST  = 11;
 
     private static readonly Rectangle TS_TILE = new(24, 24, 24, 24);
     private static readonly List<GameElement> TABLE_ELEMENTS = [];
     private static readonly List<GameTableElement> FREE_ENEMY_TILES = [];
 
     public static IReadOnlyList<GameElement> TableElements => TABLE_ELEMENTS;
-    public static List<GameElement> GetTable() => TABLE_ELEMENTS;
 
     public static int TABLE_SIZE_X { get; private set; }
     public static int TABLE_SIZE_Y { get; private set; }
@@ -34,25 +35,37 @@ public static class GameTable
 
     public static Rectangle PlayArea { get; private set; }
 
+    public static int FieldCap { get; private set; } = Balance.FIELD_START;
+
+    public static int EnemyCap { get; private set; } = Balance.FIELD_START;
+
     public static void Initialize()
     {
         TABLE_ELEMENTS.Clear();
 
         int tileSize = GameRenderer.GetScreenWidth() / TILE_COLUMNS;
-        int yTiles   = GameRenderer.GetScreenHeight() / tileSize;
+        int deckHeight = GameRenderer.GetScreenWidth() / UI_COLUMNS * DECK_ROWS;
+        int yTiles = (GameRenderer.GetScreenHeight() - deckHeight) / tileSize;
 
         TABLE_SIZE_X = TILE_COLUMNS - BORDER_TILES * 2;
         TABLE_SIZE_Y = Math.Max(1, yTiles - BORDER_TILES * 2);
         TILE_SIZE    = tileSize;
-        PlayArea     = new Rectangle(tileSize, tileSize, TABLE_SIZE_X * tileSize, TABLE_SIZE_Y * tileSize);
+
+        int originX = (GameRenderer.GetScreenWidth() - TABLE_SIZE_X * tileSize) / 2;
+        int originY = BORDER_TILES * tileSize;
+        PlayArea     = new Rectangle(originX, originY,
+            TABLE_SIZE_X * tileSize, TABLE_SIZE_Y * tileSize);
+
+        int playerTiles = 0;
+        int enemyTiles = 0;
 
         for (int y = 0; y < TABLE_SIZE_Y; y++)
         {
             for (int x = 0; x < TABLE_SIZE_X; x++)
             {
                 var element = new GameTableElement(
-                    tileSize + tileSize * x,
-                    tileSize + tileSize * y,
+                    originX + tileSize * x,
+                    originY + tileSize * y,
                     tileSize, tileSize, VISIBLE: true)
                 {
                     TABLE_POSITION_X = x,
@@ -62,10 +75,46 @@ public static class GameTable
                     ENEMY_ZONE       = y < Math.Min(ENEMY_ROWS, TABLE_SIZE_Y)
                 };
 
-                element.SetRendererConfig(GameRendererConfig.Sprite("Environment/tileset", TS_TILE));
+                element.SetRendererConfig(GroundConfig(x, y));
                 TABLE_ELEMENTS.Add(element);
+
+                if (element.PLAYER_OWN) playerTiles++;
+                if (element.ENEMY_ZONE) enemyTiles++;
             }
         }
+
+        FieldCap = Balance.FieldCap(playerTiles);
+        EnemyCap = Balance.FieldCap(enemyTiles);
+    }
+
+    public static GameRendererConfig GroundConfig(int COLUMN, int ROW)
+    {
+        DungeonTheme? theme = DungeonThemes.Current;
+        if (theme == null) return GameRendererConfig.Sprite("Environment/tileset", TS_TILE);
+
+        int slice = DungeonThemes.SliceIndex(COLUMN, ROW, TABLE_SIZE_X, TABLE_SIZE_Y);
+
+        if (slice == DungeonThemes.SLICE_CENTER && theme.HasDecor)
+        {
+            int decor = DungeonThemes.DecorAt(COLUMN, ROW);
+            if (decor >= 0) return GameRendererConfig.Sprite(DungeonThemes.TEXTURE, theme.Decor(decor));
+        }
+
+        return GameRendererConfig.Sprite(DungeonThemes.TEXTURE, theme.Ground(slice));
+    }
+
+    public static void Retheme()
+    {
+        UITheme.Rebuild();
+        GameDeck.RequestRebuild();
+        GameHud.Refresh();
+
+        for (int i = 0; i < TABLE_ELEMENTS.Count; i++)
+        {
+            if (TABLE_ELEMENTS[i] is GameTableElement tile)
+                tile.SetRendererConfig(GroundConfig(tile.TABLE_POSITION_X, tile.TABLE_POSITION_Y));
+        }
+        GameMap.Initialize();
     }
 
     public static void Rebuild()
@@ -140,14 +189,6 @@ public static class GameTable
     #endregion
 
     #region ENEMY TEAM
-    private static List<Pokemon> BuildEnemyPool(int SIZE)
-    {
-        int band = Balance.EnemyStatBand(GameGlobals.LEVEL);
-        var pool = new List<Pokemon>(SIZE);
-        for (int i = 0; i < SIZE; i++) pool.Add(PokemonDatabase.RandomInBand(band));
-        return pool;
-    }
-
     private static void CollectFreeEnemyTiles()
     {
         FREE_ENEMY_TILES.Clear();
@@ -170,20 +211,26 @@ public static class GameTable
 
     public static void InitializeEnemyTeam()
     {
-        int count      = Math.Min(Balance.EnemyCount(GameGlobals.LEVEL), MAX_ENEMIES);
-        int enemyLevel = Balance.EnemyLevel(GameGlobals.LEVEL);
+        int slots = Math.Min(GameGlobals.GetTableSize(), EnemyCap);
+        List<Pokemon> team = Encounters.Team(GameGlobals.LEVEL, slots);
+        if (team.Count == 0) return;
 
-        List<Pokemon> pool = BuildEnemyPool(count);
         CollectFreeEnemyTiles();
 
-        int placed = Math.Min(count, FREE_ENEMY_TILES.Count);
+        bool boss = Balance.IsBossRound(GameGlobals.LEVEL);
+        int placed = Math.Min(team.Count, FREE_ENEMY_TILES.Count);
         for (int i = 0; i < placed; i++)
         {
-            Pokemon scaled = pool[Random.Shared.Next(pool.Count)].Clone();
-            for (int level = 1; level < enemyLevel; level++) scaled.LevelUp();
-
-            var entity = new PokemonEntity(0, 0) { POKEMON = scaled, ENEMY = true };
+            var entity = new PokemonEntity(0, 0)
+            {
+                POKEMON = team[i],
+                ENEMY = true,
+                BOSS = boss && i == 0 && team[i].LEGENDARY
+            };
             FREE_ENEMY_TILES[i].InsertPokemon(entity);
+
+            entity.ClampInside(PlayArea);
+            entity.START = entity.GetPosition();
         }
     }
 

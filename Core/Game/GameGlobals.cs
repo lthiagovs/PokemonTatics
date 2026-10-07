@@ -15,6 +15,7 @@ public static class GameGlobals
     public static int PLAYER_HP = MAX_HP;
     public static int PLAYER_MANA = Logic.Balance.MANA_START;
     public static int LEVEL = 1;
+    public static int REROLLS_LEFT = Logic.Balance.REROLLS_PER_ROUND;
     public static GameState STATE = GameState.TITLE;
 
     public static void ChangeMana(int VALUE) => PLAYER_MANA = System.Math.Clamp(PLAYER_MANA + VALUE, 0, MAX_MANA);
@@ -23,7 +24,7 @@ public static class GameGlobals
 
     public static bool IsDefeated() => PLAYER_HP <= 0;
 
-    public static int GetTableSize() => Logic.Balance.TableSize(LEVEL);
+    public static int GetTableSize() => Logic.Balance.TableSize(LEVEL, Table.GameTable.FieldCap);
 
     public static void ResetRun()
     {
@@ -31,6 +32,7 @@ public static class GameGlobals
         PLAYER_HP    = MAX_HP;
         PLAYER_MANA  = Logic.Balance.MANA_START;
         LEVEL        = 1;
+        REROLLS_LEFT = Logic.Balance.REROLLS_PER_ROUND;
         STATE        = GameState.TITLE;
     }
 }

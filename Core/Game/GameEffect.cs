@@ -29,6 +29,8 @@ public sealed class GameEffect
     public readonly float SCALE;
 
     private readonly PokemonEntity? _target;
+    private readonly int _originX;
+    private readonly int _originY;
     private double _elapsed;
 
     public int X { get; private set; }
@@ -46,6 +48,8 @@ public sealed class GameEffect
         this.TINT   = TINT;
         this.SCALE  = SCALE;
         _target     = TARGET;
+        _originX    = X;
+        _originY    = Y;
     }
 
     public static void Spawn(
@@ -75,6 +79,16 @@ public sealed class GameEffect
             Rectangle bounds = _target.GetRectangle();
             X = bounds.X + bounds.Width  / 2;
             Y = bounds.Y + bounds.Height / 2;
+        }
+        else if (TYPE == GameEffectType.MISSILE && _target != null)
+        {
+            Rectangle bounds = _target.GetRectangle();
+            int destX = bounds.X + bounds.Width / 2;
+            int destY = bounds.Y + bounds.Height / 2;
+
+            float progress = FRAMES <= 1 ? 1f : FrameIndex / (float)(FRAMES - 1);
+            X = (int)MathHelper.Lerp(_originX, destX, progress);
+            Y = (int)MathHelper.Lerp(_originY, destY, progress);
         }
 
         _elapsed += GameTimeLogic.DELTA;

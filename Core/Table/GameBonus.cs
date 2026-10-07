@@ -11,13 +11,12 @@ namespace PokemonTFT.Table;
 public static class GameBonus
 {
     private const int ICON_ASSET_SIZE = 34;
-    private const int ICON_SIZE = ICON_ASSET_SIZE;
-    private const int SPACING_X = 4;
-    private const int SPACING_Y = 6;
-    private const int START_X = 20;
-    private const int START_Y = 40;
-    private const int HEADER_X = 20;
-    private const int HEADER_Y = 20;
+    private const int ICON_SIZE = 40;
+    private const int SPACING_Y = 8;
+    private const int MARGIN = 18;
+    private const int CHIP_H = 48;
+    private const int CHIP_PAD = 10;
+    private const int TOP_RIGHT_RESERVE = 70;
 
     private static readonly List<GameElement> BONUS_ELEMENTS = [];
     private static readonly PokemonType[] TYPES = Enum.GetValues<PokemonType>();
@@ -45,33 +44,48 @@ public static class GameBonus
     {
         BONUS_ELEMENTS.Clear();
 
-        var header = new GameInterfaceElement(HEADER_X, HEADER_Y, 100, 100, VISIBLE: true);
-        header.SetRendererConfig(GameRendererConfig.Label($"TABLE SIZE: {GameGlobals.GetTableSize()}"));
-        BONUS_ELEMENTS.Add(header);
+        int right = GameRenderer.GetScreenWidth() - MARGIN;
+        int y = MARGIN + TOP_RIGHT_RESERVE;
 
-        int row = 0;
         foreach (PokemonType type in TYPES)
         {
             int count = GameBonusLogic.GetTypeBonusCount(type);
             if (count == 0) continue;
 
-            for (int i = 0; i < count; i++)
+            PokemonType captured = type;
+            bool active = GameBonusLogic.IsActive(type);
+            string label = $"x{count}";
+            Vector2 size = GameFonts.Measure(label, GameFonts.BODY);
+            int width = CHIP_PAD + ICON_SIZE + 8 + (int)size.X + CHIP_PAD;
+
+            var chip = new TypeChipElement(right - width, y, width, CHIP_H, VISIBLE: true)
             {
-                var icon = new GameBonusElement(
-                    START_X + i * (ICON_SIZE + SPACING_X),
-                    START_Y + row * (ICON_SIZE + SPACING_Y),
-                    ICON_SIZE, ICON_SIZE, VISIBLE: true)
-                {
-                    TYPE = type
-                };
-                icon.SetRendererConfig(GameRendererConfig.Sprite(
-                    PokemonTypeAssets.IconPath(type),
-                    new Rectangle(0, 0, ICON_ASSET_SIZE, ICON_ASSET_SIZE)));
+                HOVERABLE = true,
+                IDLE_BOB = 0f,
+                HOVER_SCALE = 1.04f,
+                TYPE = captured,
+                ON_CLICK = () => TypeModal.Open(captured)
+            };
+            chip.SetRendererConfig(GameRendererConfig.Solid(active ? UITheme.ACCENT : UITheme.BORDER));
 
-                BONUS_ELEMENTS.Add(icon);
-            }
+            var glass = new GameInterfaceElement(UIFactory.BORDER, UIFactory.BORDER,
+                width - UIFactory.BORDER * 2, CHIP_H - UIFactory.BORDER * 2, VISIBLE: true, PARENT: chip);
+            glass.SetRendererConfig(GameRendererConfig.Glass(UITheme.GLASS));
+            chip.AddChild(glass);
 
-            row++;
+            var icon = new GameInterfaceElement(CHIP_PAD, (CHIP_H - ICON_SIZE) / 2,
+                ICON_SIZE, ICON_SIZE, VISIBLE: true, PARENT: chip);
+            icon.SetRendererConfig(GameRendererConfig.Sprite(
+                PokemonTypeAssets.IconPath(type), new Rectangle(0, 0, ICON_ASSET_SIZE, ICON_ASSET_SIZE),
+                active ? Color.White : Color.White * 0.45f));
+            chip.AddChild(icon);
+
+            UIFactory.LabelBox(label,
+                new Rectangle(CHIP_PAD + ICON_SIZE + 8, 0, (int)size.X, CHIP_H), chip,
+                active ? UITheme.ACCENT : UITheme.TEXT_DIM);
+
+            BONUS_ELEMENTS.Add(chip);
+            y += CHIP_H + SPACING_Y;
         }
     }
 }

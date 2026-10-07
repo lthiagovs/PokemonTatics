@@ -64,8 +64,8 @@ public static class TypeChart
         Set(PokemonType.PSYCHIC,  IMMUNE, PokemonType.DARK);
 
         Set(PokemonType.BUG,      STRONG, PokemonType.GRASS, PokemonType.PSYCHIC, PokemonType.DARK);
-        Set(PokemonType.BUG,      WEAK,   PokemonType.FIRE, PokemonType.FIGHT, PokemonType.FLY, PokemonType.GHOST,
-                                          PokemonType.STEEL, PokemonType.FAIRY);
+        Set(PokemonType.BUG,      WEAK,   PokemonType.FIRE, PokemonType.FIGHT, PokemonType.POISON,
+                                          PokemonType.FLY, PokemonType.GHOST, PokemonType.STEEL, PokemonType.FAIRY);
 
         Set(PokemonType.ROCK,     STRONG, PokemonType.FIRE, PokemonType.ICE, PokemonType.FLY, PokemonType.BUG);
         Set(PokemonType.ROCK,     WEAK,   PokemonType.FIGHT, PokemonType.GROUND, PokemonType.STEEL);
@@ -92,6 +92,4 @@ public static class TypeChart
 
     public static float GetEffectiveness(PokemonType ATTACKER, PokemonType DEFENDER)
         => TABLE[(int)ATTACKER * SIZE + (int)DEFENDER];
-
-    public static bool IsImmune(float MULTIPLIER) => MULTIPLIER < 0.001f;
 }

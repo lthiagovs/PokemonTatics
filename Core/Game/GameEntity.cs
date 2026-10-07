@@ -4,20 +4,28 @@ namespace PokemonTFT.Core;
 
 public sealed class GameEntityRenderConfig
 {
-    public const int DEFAULT_SLICE = 32;
-    public const int DEFAULT_SCALE = 3;
+    public const int DEFAULT_SLICE = 64;
+    public const int DEFAULT_SCALE = 2;
 
     public readonly int SLICE_SIZE;
     public readonly int SCALE;
     public readonly string TEXTURE_PATH;
 
-    public int DrawSize => SLICE_SIZE * SCALE;
+    public readonly int FOOT_Y;
+    public readonly int FOOT_W;
 
-    public GameEntityRenderConfig(string TEXTURE_PATH, int SLICE_SIZE = DEFAULT_SLICE, int SCALE = DEFAULT_SCALE)
+    public float SIZE_SCALE = 1f;
+
+    public int DrawSize => (int)(SLICE_SIZE * SCALE * SIZE_SCALE);
+
+    public GameEntityRenderConfig(string TEXTURE_PATH, int SLICE_SIZE = DEFAULT_SLICE, int SCALE = DEFAULT_SCALE,
+                                 int FOOT_Y = 0, int FOOT_W = 0)
     {
         this.TEXTURE_PATH = TEXTURE_PATH;
         this.SLICE_SIZE   = SLICE_SIZE;
         this.SCALE        = SCALE;
+        this.FOOT_Y       = FOOT_Y > 0 ? FOOT_Y : SLICE_SIZE;
+        this.FOOT_W       = FOOT_W > 0 ? FOOT_W : SLICE_SIZE / 2;
     }
 }
 
@@ -44,6 +52,12 @@ public class GameEntity : GameElement
     public void PlayOnce(GameAnimation ANIMATION) => _oneShot = ANIMATION;
 
     public void ClearOneShot() => _oneShot = null;
+
+    public void SetWalkPace(float PIXELS_PER_SECOND)
+    {
+        if (PIXELS_PER_SECOND <= 1f) return;
+        _walkAnimation.SetFrameSpeed(Balance.WALK_CYCLE_PIXELS / (_walkAnimation.FrameCount * PIXELS_PER_SECOND));
+    }
 
     private GameAnimation LoopAnimation => IS_MOVING ? _walkAnimation : _idleAnimation;
 

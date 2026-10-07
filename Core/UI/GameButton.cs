@@ -5,12 +5,14 @@ using PokemonTFT.Logic;
 
 namespace PokemonTFT.UI;
 
-public sealed class GameButton : GameInterfaceElement
+public class GameButton : GameInterfaceElement
 {
     private const float SCALE_LERP = 14f;
     private const double PUNCH_TIME = 0.09;
 
     public Action? ON_CLICK;
+
+    public bool ENABLED = true;
 
     public float HOVER_SCALE = 1.12f;
     public float PUNCH_SCALE = 0.93f;
@@ -27,6 +29,13 @@ public sealed class GameButton : GameInterfaceElement
     public override void Update()
     {
         base.Update();
+
+        if (!VISIBLE || !ENABLED)
+        {
+            _scale = 1f;
+            RENDER_SCALE = 1f;
+            return;
+        }
 
         bool hovered = IsHovered();
 

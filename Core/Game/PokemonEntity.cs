@@ -8,7 +8,6 @@ namespace PokemonTFT.Core;
 
 public class PokemonEntity : GameEntity
 {
-    private const double HOVER_DELAY = 0.5;
 
     private const float IDLE_BOB      = 1.5f;
     private const double IDLE_BOB_SPEED = 2.6;
@@ -37,13 +36,14 @@ public class PokemonEntity : GameEntity
 
     public bool CARRIED;
 
+    public bool BOSS;
+
     public Point START;
 
     public bool HOVERED { get; private set; }
 
     private PokemonEntity? _target;
     private string? _spriteKey;
-    private double _hoverElapsed;
     private double _bobTime;
     private double _lungeLeft;
     private Vector2 _lungeDirection;
@@ -52,16 +52,26 @@ public class PokemonEntity : GameEntity
     private double _deathElapsed = -1;
     private double _deathSpin;
 
+    public readonly StatusState STATUS = new();
+
+    public readonly TacticState TACTIC = new();
+
     public PokemonEntity(int POS_X, int POS_Y, bool VISIBLE = true)
         : base(POS_X, POS_Y, GameEntityRenderConfig.DEFAULT_SLICE, GameEntityRenderConfig.DEFAULT_SLICE, VISIBLE) { }
 
     #region CONFIG
     public override GameEntityRenderConfig GetEntityConfig()
     {
-        if (POKEMON != null && _spriteKey != POKEMON.SPRITE)
+        if (POKEMON == null) return base.GetEntityConfig();
+
+        float size = POKEMON.SIZE_SCALE * (BOSS ? Balance.LEGENDARY_SIZE : 1f);
+        string key = POKEMON.SPRITE + size;
+        if (_spriteKey != key)
         {
-            _spriteKey = POKEMON.SPRITE;
-            SetEntityConfig(new GameEntityRenderConfig(POKEMON.MovesetPath, POKEMON.SPRITE_SLICE));
+            _spriteKey = key;
+            SetEntityConfig(new GameEntityRenderConfig(
+                POKEMON.MovesetPath, POKEMON.SPRITE_SLICE, POKEMON.SPRITE_SCALE,
+                POKEMON.FOOT_Y, POKEMON.FOOT_W) { SIZE_SCALE = size });
         }
         return base.GetEntityConfig();
     }
@@ -162,8 +172,6 @@ public class PokemonEntity : GameEntity
         ClearOneShot();
         SetEffect(null);
     }
-
-    public bool IsCelebrating => _celebrateLeft > 0;
 
     public void ResetRoundVisuals()
     {
@@ -267,7 +275,8 @@ public class PokemonEntity : GameEntity
             IS_MOVING = SOURCE.IS_MOVING,
             ENEMY     = SOURCE.ENEMY,
             START     = SOURCE.START,
-            PURCHASED = SOURCE.PURCHASED
+            PURCHASED = SOURCE.PURCHASED,
+            BOSS      = SOURCE.BOSS
         };
     }
 
@@ -279,7 +288,6 @@ public class PokemonEntity : GameEntity
         if (DEAD)
         {
             HOVERED = false;
-            GameTooltip.Hide(this);
             return;
         }
 
@@ -290,17 +298,8 @@ public class PokemonEntity : GameEntity
         }
 
         HOVERED = GameMouse.IsOver(this);
+        if (!HOVERED || POKEMON == null) return;
 
-        if (!HOVERED)
-        {
-            _hoverElapsed = 0;
-            GameTooltip.Hide(this);
-            return;
-        }
-
-        _hoverElapsed += GameTimeLogic.DELTA;
-        if (_hoverElapsed < HOVER_DELAY || POKEMON == null) return;
-
-        GameTooltip.Show(this, PokemonHintText.Build(POKEMON));
+        if (GameMouse.RightPressed() && PokemonModal.CanOpen) PokemonModal.Open(POKEMON);
     }
 }

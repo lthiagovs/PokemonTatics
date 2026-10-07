@@ -7,7 +7,7 @@ public sealed class GameAnimation
     private static readonly int[] ATTACK_FRAMES = [2, 1, 0, 1];
 
     private readonly int[] _frames;
-    private readonly double _frameSpeed;
+    private double _frameSpeed;
     private readonly bool _loop;
 
     private int _index;
@@ -27,6 +27,13 @@ public sealed class GameAnimation
     public static GameAnimation Attack() => new(ATTACK_FRAMES, 0.06, LOOP: false);
 
     public int CurrentFrame => _frames[_index];
+
+    public int FrameCount => _frames.Length;
+
+    public void SetFrameSpeed(double SECONDS)
+    {
+        if (SECONDS > 0) _frameSpeed = SECONDS;
+    }
 
     public void Update(double DELTA)
     {

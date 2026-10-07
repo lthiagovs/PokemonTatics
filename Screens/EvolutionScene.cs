@@ -107,7 +107,7 @@ public static class EvolutionScene
         _applied = false;
 
         GameMouse.ClearCarry();
-        GameTooltip.Clear();
+        GameModal.Close();
 
         Rectangle bounds = next.ENTITY.GetRectangle();
         _start = new Vector2(bounds.X + bounds.Width / 2f, bounds.Y + bounds.Height / 2f);
@@ -314,15 +314,24 @@ public static class EvolutionScene
         }
     }
 
+    private const float CAPTION_Y = 0.74f;
+    private const float CAPTION_GAP = 14f;
+
     private static void DrawCaption(Entry ENTRY, Vector2 CENTER, float SCALE)
     {
         float width = GameRenderer.GetScreenWidth();
-        float below = CENTER.Y + ENTRY.TO_SLICE * SCALE / 2f + 40f;
+        float height = GameRenderer.GetScreenHeight();
+
+        float nameH = GameFonts.Measure(ENTRY.TO_NAME, GameFonts.LARGE).Y;
+        float tagH = GameFonts.Measure("EVOLVED!", GameFonts.MEDIUM).Y;
+
+        float tagY = height * CAPTION_Y;
+        float nameY = tagY - CAPTION_GAP - nameH;
 
         if (_elapsed >= T_CHARGE && _elapsed < T_BURST)
         {
             float t = (float)((_elapsed - T_CHARGE) / CHARGE);
-            GameRenderer.DrawCenteredText("EVOLVING...", width / 2f, below,
+            GameRenderer.DrawCenteredText("EVOLVING...", width / 2f, tagY,
                 Color.White * Math.Min(1f, t * 2f), GameFonts.MEDIUM);
             return;
         }
@@ -333,10 +342,10 @@ public static class EvolutionScene
         float fade   = _elapsed < T_RESTORE ? 1f : 1f - (float)Math.Clamp((_elapsed - T_RESTORE) / RESTORE, 0, 1);
         float alpha  = reveal * fade;
 
-        GameRenderer.DrawCenteredText(ENTRY.TO_NAME.ToUpperInvariant(), width / 2f, below,
+        GameRenderer.DrawCenteredText(ENTRY.TO_NAME.ToUpperInvariant(), width / 2f, nameY,
             ENTRY.ACCENT * alpha, GameFonts.LARGE);
 
-        GameRenderer.DrawCenteredText("EVOLVED!", width / 2f, below + GameFonts.LARGE * 12f,
+        GameRenderer.DrawCenteredText("EVOLVED!", width / 2f, tagY,
             Color.White * alpha, GameFonts.MEDIUM);
     }
     #endregion

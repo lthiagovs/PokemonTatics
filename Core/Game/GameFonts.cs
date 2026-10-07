@@ -5,6 +5,7 @@ namespace PokemonTFT.Core;
 public static class GameFonts
 {
     public const float SMALL  = 1f;
+    public const float BODY   = 2f;
     public const float MEDIUM = 3f;
     public const float LARGE  = 4f;
     public const float TITLE  = 6f;

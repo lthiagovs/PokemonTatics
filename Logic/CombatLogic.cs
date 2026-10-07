@@ -30,7 +30,8 @@ public static class CombatLogic
 {
     private const int CHARGE_PER_HIT = 200;
 
-    public static CombatResult Resolve(Pokemon ATTACKER, Pokemon DEFENDER, TypeBonusSnapshot BONUS, bool SECOND_TICK)
+    public static CombatResult Resolve(Pokemon ATTACKER, Pokemon DEFENDER, TypeBonusSnapshot BONUS,
+                                       bool ATTACKER_ALLY)
     {
         float roll = 1f + (float)(Random.Shared.NextDouble() * 2.0 - 1.0) * Balance.DAMAGE_VARIANCE;
 
@@ -39,46 +40,66 @@ public static class CombatLogic
         int effectiveDEF   = DEFENDER.DEF;
         int effectiveSPDEF = DEFENDER.SPDEF;
 
-        int fireBuff = BONUS.Count(PokemonType.FIRE) * 5;
-        effectiveATK   = (int)(effectiveATK   * (1 + fireBuff / 100f));
-        effectiveSPATK = (int)(effectiveSPATK * (1 + fireBuff / 100f));
+        bool offence = ATTACKER_ALLY;
+        bool defence = !ATTACKER_ALLY;
 
-        int rockCount    = BONUS.Count(PokemonType.ROCK);
-        int steelCount   = BONUS.Count(PokemonType.STEEL);
-        float sturdyBuff = Math.Min((rockCount + steelCount) * 0.08f, 0.64f);
-        effectiveDEF   = (int)(effectiveDEF   * (1 + sturdyBuff));
-        effectiveSPDEF = (int)(effectiveSPDEF * (1 + sturdyBuff));
-
-        int normalBuff = BONUS.Count(PokemonType.NORMAL) * 8;
-        if (ATTACKER.TYPE == PokemonType.NORMAL) effectiveATK += normalBuff;
-        if (DEFENDER.TYPE == PokemonType.NORMAL) effectiveDEF += normalBuff;
-
-        if (ATTACKER.TYPE == PokemonType.DRAGON && BONUS.Count(PokemonType.DRAGON) == 1)
+        if (offence)
         {
-            effectiveATK   *= 2;
-            effectiveSPATK *= 2;
+            float blaze = Bonus(BONUS, PokemonType.FIRE);
+            effectiveATK   = Boost(effectiveATK, blaze);
+            effectiveSPATK = Boost(effectiveSPATK, blaze);
+
+            effectiveATK = Boost(effectiveATK, Bonus(BONUS, PokemonType.FIGHT));
+            effectiveSPATK = Boost(effectiveSPATK, Bonus(BONUS, PokemonType.PSYCHIC));
+
+            float pressure = Bonus(BONUS, PokemonType.DRAGON);
+            effectiveATK   = Boost(effectiveATK, pressure);
+            effectiveSPATK = Boost(effectiveSPATK, pressure);
+
+            effectiveATK += (int)Bonus(BONUS, PokemonType.NORMAL);
+
+            float shred = Bonus(BONUS, PokemonType.POISON);
+            effectiveDEF   = Boost(effectiveDEF, -shred);
+            effectiveSPDEF = Boost(effectiveSPDEF, -shred);
         }
 
-        int shadowCount = BONUS.Count(PokemonType.GHOST) + BONUS.Count(PokemonType.DARK);
-        if (shadowCount > 0 && (DEFENDER.TYPE == PokemonType.GHOST || DEFENDER.TYPE == PokemonType.DARK))
+        if (defence)
         {
-            int evasionChance = Math.Min(shadowCount * 5, 40);
-            if (Random.Shared.Next(0, 100) < evasionChance) return CombatResult.NoHit(EVADED: true, IMMUNE: false);
+            float sturdy = Bonus(BONUS, PokemonType.ROCK);
+            effectiveDEF   = Boost(effectiveDEF, sturdy);
+            effectiveSPDEF = Boost(effectiveSPDEF, sturdy);
+
+            effectiveDEF += (int)Bonus(BONUS, PokemonType.NORMAL);
+
+            if (Chance(Bonus(BONUS, PokemonType.FLY)))
+                return CombatResult.NoHit(EVADED: true, IMMUNE: false);
+
+            if (Chance(Bonus(BONUS, PokemonType.GHOST)))
+                return CombatResult.NoHit(EVADED: true, IMMUNE: false);
         }
 
         effectiveDEF   = Math.Max(1, effectiveDEF);
         effectiveSPDEF = Math.Max(1, effectiveSPDEF);
 
-        float totalDamage = (float)effectiveATK / effectiveDEF * Balance.DAMAGE_SCALE * roll;
+        float physical = (float)effectiveATK / effectiveDEF;
+        float specialRatio = (float)effectiveSPATK / effectiveSPDEF;
+        bool hybrid = ATTACKER.GetStyle() == PokemonStyle.BALANCED;
 
-        int waterCount          = BONUS.Count(PokemonType.WATER);
-        float waterReduction    = Math.Min(waterCount * 0.10f, 0.50f);
-        int effectiveSpecialMax = (int)(ATTACKER.SPECIAL_MAX * (1 - waterReduction));
+        float basic = hybrid ? Math.Max(physical, specialRatio) : physical;
+        float totalDamage = basic * Balance.DAMAGE_SCALE * roll;
+
+        float torrent = offence ? Bonus(BONUS, PokemonType.WATER) : 0f;
+        int effectiveSpecialMax = (int)(ATTACKER.SPECIAL_MAX * (1 - torrent));
 
         bool special = ATTACKER.SPECIAL_COUNTER >= effectiveSpecialMax;
         if (special)
         {
-            float specialDamage = (float)effectiveSPATK / effectiveSPDEF * Balance.SPECIAL_DAMAGE_SCALE * roll;
+            float power = hybrid ? Math.Max(physical, specialRatio)
+                : ATTACKER.BASE_ATK > ATTACKER.BASE_SPATK ? physical : specialRatio;
+            float specialDamage = power * Balance.SPECIAL_DAMAGE_SCALE * roll;
+
+            if (defence) specialDamage *= 1f - Bonus(BONUS, PokemonType.FAIRY);
+
             totalDamage = Math.Max(1, specialDamage);
             ATTACKER.SPECIAL_COUNTER = 0;
         }
@@ -87,26 +108,39 @@ public static class CombatLogic
             ATTACKER.ChargeSpecial(CHARGE_PER_HIT);
         }
 
-        int electricCount = BONUS.Count(PokemonType.ELECTRIC);
-        if (electricCount > 0 && ATTACKER.TYPE == PokemonType.ELECTRIC)
+        if (offence)
         {
-            int chance = Math.Min(electricCount * 15, 45);
-            if (Random.Shared.Next(0, 100) < chance)
-                DEFENDER.SPEED = Math.Max(1, DEFENDER.SPEED - 15);
+            if (DEFENDER.TYPE != PokemonType.FLY)
+                totalDamage *= 1f + Bonus(BONUS, PokemonType.GROUND);
+
+            if (Chance(Bonus(BONUS, PokemonType.ICE)))
+                DEFENDER.SPEED = Math.Max(1, DEFENDER.SPEED - GameBonusLogic.ICE_SPEED_CUT);
+
+            if (Chance(Bonus(BONUS, PokemonType.ELECTRIC)))
+                DEFENDER.SPEED = Math.Max(1, DEFENDER.SPEED - GameBonusLogic.ELECTRIC_SPEED_CUT);
         }
 
-        if (ATTACKER.TYPE == PokemonType.GRASS && SECOND_TICK)
-        {
-            int grassCount = BONUS.Count(PokemonType.GRASS);
-            int regen      = Math.Min(grassCount * 5, (int)(ATTACKER.MAX_HP * 0.02f));
-            ATTACKER.HP    = Math.Min(ATTACKER.MAX_HP, ATTACKER.HP + regen);
-        }
-
-        float typeMultiplier = TypeChart.GetEffectiveness(ATTACKER.TYPE, DEFENDER.TYPE);
-        if (TypeChart.IsImmune(typeMultiplier)) return CombatResult.NoHit(EVADED: false, IMMUNE: true);
+        float typeMultiplier = Math.Max(TypeChart.GetEffectiveness(ATTACKER.TYPE, DEFENDER.TYPE),
+            Balance.MIN_TYPE_MULTIPLIER);
 
         totalDamage *= typeMultiplier;
 
-        return new CombatResult((int)Math.Max(1, totalDamage), EVADED: false, IMMUNE: false, SPECIAL: special, typeMultiplier);
+        return new CombatResult((int)Math.Max(1, totalDamage), EVADED: false, IMMUNE: false,
+            SPECIAL: special, typeMultiplier);
     }
+
+    private static float Bonus(TypeBonusSnapshot BONUS, PokemonType TYPE) => GameBonusLogic.Strength(BONUS, TYPE);
+
+    public static int Regeneration(Pokemon POKEMON, TypeBonusSnapshot BONUS)
+    {
+        if (POKEMON.HP <= 0 || POKEMON.HP >= POKEMON.MAX_HP) return 0;
+
+        int cap = Math.Max(1, POKEMON.MAX_HP * GameBonusLogic.GRASS_REGEN_CAP_PERCENT / 100);
+        int regen = Math.Min((int)Bonus(BONUS, PokemonType.GRASS), cap);
+        return Math.Min(regen, POKEMON.MAX_HP - POKEMON.HP);
+    }
+
+    private static bool Chance(float SHARE) => SHARE > 0f && Random.Shared.NextDouble() < SHARE;
+
+    private static int Boost(int VALUE, float SCALE) => Math.Max(1, (int)(VALUE * (1 + SCALE)));
 }

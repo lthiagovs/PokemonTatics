@@ -7,49 +7,71 @@ namespace PokemonTFT.Table;
 
 public static class GameMap
 {
-    private const int TILE = 24;
+    private const int ALT_CHANCE = 4;
 
-    private static readonly Rectangle TS_TOP_LEFT     = new(0,        0, TILE, TILE);
-    private static readonly Rectangle TS_TOP          = new(TILE,     0, TILE, TILE);
-    private static readonly Rectangle TS_TOP_RIGHT    = new(TILE * 2, 0, TILE, TILE);
-    private static readonly Rectangle TS_LEFT         = new(0,        TILE, TILE, TILE);
-    private static readonly Rectangle TS_RIGHT        = new(TILE * 2, TILE, TILE, TILE);
-    private static readonly Rectangle TS_BOTTOM_LEFT  = new(0,        TILE * 2, TILE, TILE);
-    private static readonly Rectangle TS_BOTTOM       = new(TILE,     TILE * 2, TILE, TILE);
-    private static readonly Rectangle TS_BOTTOM_RIGHT = new(TILE * 2, TILE * 2, TILE, TILE);
+    private static readonly Rectangle[] FALLBACK = BuildFallback();
 
     private static readonly List<GameElement> MAP_ELEMENTS = [];
 
     public static IReadOnlyList<GameElement> GetMap() => MAP_ELEMENTS;
 
+    private static Rectangle[] BuildFallback()
+    {
+        var rects = new Rectangle[9];
+        for (int i = 0; i < 9; i++) rects[i] = new Rectangle(i % 3 * 24, i / 3 * 24, 24, 24);
+        return rects;
+    }
+
     public static void Initialize()
     {
         MAP_ELEMENTS.Clear();
 
-        int columns  = GameTable.TILE_COLUMNS;
-        int tileSize = GameRenderer.GetScreenWidth() / columns;
-        int rows     = GameRenderer.GetScreenHeight() / tileSize;
+        int tileSize = GameTable.TILE_SIZE;
+        if (tileSize <= 0) return;
 
-        for (int x = 0; x < columns; x++)
+        int columns = GameRenderer.GetScreenWidth() / tileSize + 1;
+        int rows = GameRenderer.GetScreenHeight() / tileSize + 1;
+        Rectangle play = GameTable.PlayArea;
+
+        for (int row = 0; row < rows; row++)
         {
-            Add(x * tileSize, 0, tileSize,
-                x == 0 ? TS_TOP_LEFT : x == columns - 1 ? TS_TOP_RIGHT : TS_TOP);
+            for (int column = 0; column < columns; column++)
+            {
+                int x = column * tileSize;
+                int y = row * tileSize;
+                if (play.Contains(x + tileSize / 2, y + tileSize / 2)) continue;
 
-            Add(x * tileSize, (rows - 1) * tileSize, tileSize,
-                x == 0 ? TS_BOTTOM_LEFT : x == columns - 1 ? TS_BOTTOM_RIGHT : TS_BOTTOM);
-        }
-
-        for (int y = 1; y < rows - 1; y++)
-        {
-            Add(0, y * tileSize, tileSize, TS_LEFT);
-            Add((columns - 1) * tileSize, y * tileSize, tileSize, TS_RIGHT);
+                var element = new GameInterfaceElement(x, y, tileSize, tileSize, VISIBLE: true);
+                element.SetRendererConfig(WallConfig(x, y, tileSize, play));
+                MAP_ELEMENTS.Add(element);
+            }
         }
     }
 
-    private static void Add(int X, int Y, int SIZE, Rectangle SOURCE)
+    private static GameRendererConfig WallConfig(int X, int Y, int TILE_SIZE, Rectangle PLAY)
     {
-        var element = new GameInterfaceElement(X, Y, SIZE, SIZE, VISIBLE: true);
-        element.SetRendererConfig(GameRendererConfig.Sprite("Environment/tileset", SOURCE));
-        MAP_ELEMENTS.Add(element);
+        int slice = DungeonThemes.WallSlice(
+            IsFloor(X, Y - TILE_SIZE, TILE_SIZE, PLAY),
+            IsFloor(X, Y + TILE_SIZE, TILE_SIZE, PLAY),
+            IsFloor(X - TILE_SIZE, Y, TILE_SIZE, PLAY),
+            IsFloor(X + TILE_SIZE, Y, TILE_SIZE, PLAY),
+            IsFloor(X - TILE_SIZE, Y - TILE_SIZE, TILE_SIZE, PLAY),
+            IsFloor(X + TILE_SIZE, Y - TILE_SIZE, TILE_SIZE, PLAY),
+            IsFloor(X - TILE_SIZE, Y + TILE_SIZE, TILE_SIZE, PLAY),
+            IsFloor(X + TILE_SIZE, Y + TILE_SIZE, TILE_SIZE, PLAY));
+
+        DungeonTheme? theme = DungeonThemes.Current;
+        if (theme == null) return GameRendererConfig.Sprite("Environment/tileset", FALLBACK[slice]);
+
+        if (slice == DungeonThemes.SLICE_CENTER && theme.HasWallAlt(slice))
+        {
+            int scatter = DungeonThemes.Scatter(X / TILE_SIZE, Y / TILE_SIZE, ALT_CHANCE);
+            if (scatter >= 0) return GameRendererConfig.Sprite(DungeonThemes.TEXTURE, theme.WallAlt(slice));
+        }
+
+        return GameRendererConfig.Sprite(DungeonThemes.TEXTURE, theme.Wall(slice));
     }
+
+    private static bool IsFloor(int X, int Y, int TILE_SIZE, Rectangle PLAY)
+        => PLAY.Contains(X + TILE_SIZE / 2, Y + TILE_SIZE / 2);
 }

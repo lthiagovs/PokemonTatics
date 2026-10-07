@@ -36,8 +36,6 @@ public class GameElement
     #region POSITION
     public virtual Point GetPosition() => _position;
 
-    public Point GetLocalPosition() => _position;
-
     public virtual Point SetPosition(Point NEW_POSITION) => _position = NEW_POSITION;
 
     public virtual Rectangle GetRectangle() => new(GetPosition(), new Point(SIZE_X, SIZE_Y));

@@ -62,9 +62,11 @@ public sealed class GameTableElement : GameInterfaceElement
     {
         base.Update();
 
-        GetRendererConfig().IS_HOVERING = false;
+        GameRendererConfig config = GetRendererConfig();
+        config.IS_HOVERING = false;
 
-        if (GameTable.TryGetZoneFlash(this, out Color flash)) GetRendererConfig().COLOR = flash;
+        if (GameTable.TryGetZoneFlash(this, out Color flash)) config.COLOR = flash;
+        else if (AreaPreview.TryTint(GetRectangle(), out Color tint)) config.COLOR = tint;
 
         if (!PLAYER_OWN) return;
 
@@ -73,7 +75,7 @@ public sealed class GameTableElement : GameInterfaceElement
         bool canPick  = !GameMouse.HasCarry() && _pokemon != null;
 
         if (canPlace && !GameGlobals.GAME_STARTED)
-            GetRendererConfig().COLOR = DROP_TARGET_TINT;
+            config.COLOR = Multiply(config.COLOR, DROP_TARGET_TINT);
 
         if (!IsHovered()) return;
 
@@ -86,6 +88,9 @@ public sealed class GameTableElement : GameInterfaceElement
         if (GameMouse.GetCarry() is PokemonEntity carried) PlaceCarried(carried);
         else if (_pokemon != null) PickUp();
     }
+
+    private static Color Multiply(Color A, Color B)
+        => new(A.R * B.R / 255, A.G * B.G / 255, A.B * B.B / 255, A.A);
 
     private void PlaceCarried(PokemonEntity CARRIED)
     {

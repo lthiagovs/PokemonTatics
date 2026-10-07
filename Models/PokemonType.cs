@@ -28,7 +28,7 @@ public enum PokemonStyle
     MAGIC_TANK,
     PHYSICAL_TANK,
     EVASION_TANK,
-    PHYSICAL_FIGHTER,
+    FIGHTER,
     MAGE,
     MAGIC_FIGHTER
 }
