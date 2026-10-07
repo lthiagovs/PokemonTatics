@@ -4,6 +4,8 @@ A Pokémon auto-battler made with MonoGame. Buy Pokémon in the shop, place them
 your side of the board and press `START`: the fight plays out on its own, and every
 round is harder than the last.
 
+![Six Pokémon from different generations against a Ho-Oh boss](docs/battle.gif)
+
 ## Setup
 
 Requires the [.NET 9 SDK](https://dotnet.microsoft.com/download), Python 3.9+ and
@@ -15,6 +17,9 @@ pip install Pillow
 python tools/pokemon_assets.py fetch --range 1-151
 dotnet run
 ```
+
+`dotnet run -- --demo <folder>` plays a scripted fight against a Ho-Oh boss and saves
+its frames to the folder; it is how the GIF above was recorded.
 
 ## Roster
 
