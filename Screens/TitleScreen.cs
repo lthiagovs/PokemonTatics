@@ -94,7 +94,8 @@ public static class TitleScreen
             y = BuildRosterWarning(WIDTH, HEIGHT) + MENU_GAP;
         }
 
-        AddButton("OPTIONS", UI.SettingsModal.Open, WIDTH, y);
+        y = AddButton("OPTIONS", UI.SettingsModal.Open, WIDTH, y) + MENU_GAP;
+        AddButton("QUIT", GameHost.Quit, WIDTH, y);
     }
 
     private static int AddButton(string TEXT, System.Action ON_CLICK, int WIDTH, int Y)
