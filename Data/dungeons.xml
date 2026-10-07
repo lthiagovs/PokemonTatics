@@ -1,0 +1,68 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Dungeons generated="2026-10-07" texture="Environment/dungeons" tile="24">
+  <Theme name="Amp Plains" x="0" y="0" decor="2" wallAlt="186" corners="4" wall="cad2d2" ground="aea795" />
+  <Theme name="Apple Woods" x="216" y="0" decor="2" wallAlt="186" corners="4" wall="73bd31" ground="c09913" />
+  <Theme name="Beach Cave" x="432" y="0" decor="2" wallAlt="511" corners="4" wall="5a4263" ground="d7aeac" />
+  <Theme name="Brine Cave" x="648" y="0" decor="2" wallAlt="186" corners="4" wall="102129" ground="655853" />
+  <Theme name="Concealed Ruins" x="864" y="0" decor="2" wallAlt="186" corners="4" wall="281d1b" ground="616928" />
+  <Theme name="Craggy Coast" x="1080" y="0" decor="2" wallAlt="186" corners="4" wall="390839" ground="7594a3" />
+  <Theme name="B05F" x="1296" y="0" decor="2" wallAlt="146" corners="4" wall="420063" ground="706c95" />
+  <Theme name="B11F" x="1512" y="0" decor="2" wallAlt="146" corners="4" wall="630042" ground="96869b" />
+  <Theme name="Crystal Crossing" x="0" y="120" decor="2" wallAlt="186" corners="4" wall="103984" ground="787699" />
+  <Theme name="Dark Crater" x="216" y="120" decor="1" wallAlt="186" corners="4" wall="290021" ground="64285d" />
+  <Theme name="06F" x="432" y="120" decor="2" wallAlt="186" corners="4" wall="6c6473" ground="234141" />
+  <Theme name="15F" x="648" y="120" decor="2" wallAlt="186" corners="4" wall="5f8d8e" ground="38382a" />
+  <Theme name="06F" x="864" y="120" decor="2" wallAlt="186" corners="4" wall="255e38" ground="543820" />
+  <Theme name="12F" x="1080" y="120" decor="2" wallAlt="186" corners="4" wall="bf7418" ground="3c4a46" />
+  <Theme name="Deep Sealed Ruin" x="1296" y="120" decor="2" wallAlt="186" corners="4" wall="856767" ground="2c3e54" />
+  <Theme name="Drenched Bluff" x="1512" y="120" decor="2" wallAlt="186" corners="4" wall="314a29" ground="abc6cc" />
+  <Theme name="04F" x="0" y="240" decor="2" wallAlt="186" corners="4" wall="144e29" ground="2b1c20" />
+  <Theme name="08F" x="216" y="240" decor="2" wallAlt="186" corners="4" wall="316378" ground="29292d" />
+  <Theme name="Far Amp Plains" x="432" y="240" decor="2" wallAlt="186" corners="4" wall="b7a282" ground="9f8818" />
+  <Theme name="Foggy Forest" x="648" y="240" decor="2" wallAlt="186" corners="4" wall="d5cddd" ground="af978e" />
+  <Theme name="Forest Path" x="864" y="240" decor="2" wallAlt="186" corners="4" wall="53c940" ground="57a740" />
+  <Theme name="Golden Chamber" x="1080" y="240" decor="2" wallAlt="186" corners="4" wall="f0c133" ground="422e12" />
+  <Theme name="Hidden Highland" x="1296" y="240" decor="2" wallAlt="186" corners="4" wall="68ac19" ground="1b6b42" />
+  <Theme name="Hidden Land" x="1512" y="240" decor="2" wallAlt="186" corners="4" wall="27c47d" ground="1c9f1a" />
+  <Theme name="Ice Aegis Cave" x="0" y="360" decor="2" wallAlt="186" corners="4" wall="36c4a7" ground="003840" />
+  <Theme name="Lower Brine Cave" x="216" y="360" decor="2" wallAlt="186" corners="4" wall="082900" ground="b27237" />
+  <Theme name="Lush Prairie" x="432" y="360" decor="2" wallAlt="186" corners="4" wall="4fc99f" ground="a8c934" />
+  <Theme name="Mt. Bristle" x="648" y="360" decor="2" wallAlt="186" corners="4" wall="eadfd7" ground="c9be9e" />
+  <Theme name="Mt. Horn" x="864" y="360" decor="2" wallAlt="186" corners="4" wall="d2a77e" ground="7e8a82" />
+  <Theme name="Mt. Travail" x="1080" y="360" decor="2" wallAlt="186" corners="4" wall="b0b193" ground="6b674b" />
+  <Theme name="15F" x="1296" y="360" decor="2" wallAlt="186" corners="4" wall="33791f" ground="5e2e27" />
+  <Theme name="30F" x="1512" y="360" decor="2" wallAlt="186" corners="4" wall="182921" ground="083208" />
+  <Theme name="Mystifying Forest" x="0" y="480" decor="2" wallAlt="186" corners="4" wall="198541" ground="74413e" />
+  <Theme name="07F" x="216" y="480" decor="2" wallAlt="186" corners="4" wall="fbb423" ground="e5d693" />
+  <Theme name="15F" x="432" y="480" decor="2" wallAlt="186" corners="4" wall="f28466" ground="ce896c" />
+  <Theme name="Quicksand Cave" x="648" y="480" decor="2" wallAlt="186" corners="4" wall="735a21" ground="d9d18d" />
+  <Theme name="Quicksand Pit" x="864" y="480" decor="2" wallAlt="186" corners="4" wall="394210" ground="b38b61" />
+  <Theme name="Rock Aegis Cave" x="1080" y="480" decor="2" wallAlt="186" corners="4" wall="acb667" ground="2b3619" />
+  <Theme name="Rock Path" x="1296" y="480" decor="2" wallAlt="186" corners="4" wall="422118" ground="5a4a5a" />
+  <Theme name="Sealed Ruin" x="1512" y="480" decor="2" wallAlt="186" corners="4" wall="68603f" ground="564702" />
+  <Theme name="Shimmer Desert" x="0" y="600" decor="1" wallAlt="144" corners="4" wall="ffef52" ground="f3f3a5" />
+  <Theme name="Side Path" x="216" y="600" decor="2" wallAlt="186" corners="4" wall="6b424a" ground="cec7ad" />
+  <Theme name="B14F" x="432" y="600" decor="2" wallAlt="186" corners="4" wall="989693" ground="1a4130" />
+  <Theme name="Steam Cave" x="648" y="600" decor="2" wallAlt="186" corners="4" wall="4a2100" ground="844b00" />
+  <Theme name="Steel Aegis Cave" x="864" y="600" decor="2" wallAlt="186" corners="4" wall="a4a7ac" ground="313a3a" />
+  <Theme name="Temporal Spire" x="1080" y="600" decor="2" wallAlt="186" corners="4" wall="ab9992" ground="6f6421" />
+  <Theme name="Temporal Spire" x="1296" y="600" decor="2" wallAlt="186" corners="4" wall="ab9992" ground="6f6421" />
+  <Theme name="Temporal Tower" x="1512" y="600" decor="2" wallAlt="186" corners="4" wall="a2c7c2" ground="9e593a" />
+  <Theme name="The Nightmare" x="0" y="720" decor="2" wallAlt="186" corners="4" wall="be99f1" ground="3622ba" />
+  <Theme name="Tiny Meadow" x="216" y="720" decor="2" wallAlt="184" corners="4" wall="efd69c" ground="84ce4a" />
+  <Theme name="08F" x="432" y="720" decor="2" wallAlt="186" corners="4" wall="62d529" ground="66a700" />
+  <Theme name="21F" x="648" y="720" decor="2" wallAlt="186" corners="4" wall="109339" ground="8b6b2d" />
+  <Theme name="Unused_ Tileset ID #13" x="864" y="720" decor="2" wallAlt="186" corners="4" wall="423921" ground="95673f" />
+  <Theme name="Unused_ Tileset ID #21" x="1080" y="720" decor="2" wallAlt="186" corners="4" wall="313110" ground="474a52" />
+  <Theme name="Unused_ Tileset ID #32" x="1296" y="720" decor="2" wallAlt="186" corners="4" wall="5b5b63" ground="2f2a2a" />
+  <Theme name="Unused_ Tileset ID #41" x="1512" y="720" decor="2" wallAlt="186" corners="4" wall="392910" ground="9dbca9" />
+  <Theme name="Unused_ Tileset ID #44" x="0" y="840" decor="2" wallAlt="186" corners="4" wall="3c8e02" ground="074f1d" />
+  <Theme name="Unused_ Tileset ID #47" x="216" y="840" decor="2" wallAlt="186" corners="4" wall="c3ae78" ground="6b8b86" />
+  <Theme name="Unused_ Tileset ID #86" x="432" y="840" decor="2" wallAlt="146" corners="4" wall="630000" ground="f0a84f" />
+  <Theme name="Waterfall Cave" x="648" y="840" decor="2" wallAlt="186" corners="4" wall="00105a" ground="c0652e" />
+  <Theme name="B30F" x="864" y="840" decor="2" wallAlt="186" corners="4" wall="6b558d" ground="160a18" />
+  <Theme name="B25F" x="1080" y="840" decor="2" wallAlt="186" corners="4" wall="546598" ground="342c30" />
+  <Theme name="B40F" x="1296" y="840" decor="2" wallAlt="186" corners="4" wall="001829" ground="2a4349" />
+  <Theme name="B03F" x="1512" y="840" decor="2" wallAlt="186" corners="4" wall="002900" ground="99ba7d" />
+  <Theme name="B07F" x="0" y="960" decor="2" wallAlt="186" corners="4" wall="98a1b8" ground="7d8771" />
+</Dungeons>

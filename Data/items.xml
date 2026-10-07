@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Items generated="2026-10-07" texture="UI/items">
+  <Item id="power_band" name="POWER BAND" effect="ATTACK" value="25" x="2" y="2" w="48" h="48" />
+  <Item id="guard_shell" name="GUARD SHELL" effect="DEFENCE" value="30" x="52" y="2" w="48" h="48" />
+  <Item id="focus_sash" name="FOCUS SASH" effect="HEALTH" value="20" x="102" y="2" w="48" h="48" />
+  <Item id="swift_feather" name="SWIFT FEATHER" effect="SPEED" value="25" x="152" y="2" w="48" h="48" />
+  <Item id="mystic_orb" name="MYSTIC ORB" effect="SPECIAL_POWER" value="30" x="202" y="2" w="45" h="36" />
+  <Item id="giant_crown" name="GIANT CROWN" effect="GIANT" value="35" x="252" y="2" w="36" h="39" />
+  <Item id="blast_seed" name="BLAST SEED" effect="SPLASH" value="35" x="2" y="52" w="39" h="48" />
+  <Item id="ember_charm" name="EMBER CHARM" effect="BURN_HIT" value="30" x="52" y="52" w="48" h="42" />
+  <Item id="toxic_leaf" name="TOXIC LEAF" effect="POISON_HIT" value="30" x="102" y="52" w="42" h="42" />
+  <Item id="static_band" name="STATIC BAND" effect="PARALYSIS_HIT" value="25" x="152" y="52" w="48" h="48" />
+  <Item id="life_ring" name="LIFE RING" effect="LIFESTEAL" value="15" x="202" y="52" w="48" h="48" />
+  <Item id="lucky_coin" name="LUCKY COIN" effect="MANA_ON_KILL" value="2" x="252" y="52" w="42" h="42" />
+</Items>
