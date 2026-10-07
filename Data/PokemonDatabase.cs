@@ -244,6 +244,14 @@ public static class PokemonDatabase
             : FALLBACK;
     }
 
+    public static Pokemon? Create(string NAME)
+    {
+        for (int i = 0; i < ALL.Count; i++)
+            if (string.Equals(ALL[i].NAME, NAME, StringComparison.OrdinalIgnoreCase)) return ALL[i].Clone();
+
+        return null;
+    }
+
     public static Pokemon? RandomLegendary()
         => LEGENDARY.Count == 0 ? null : LEGENDARY[System.Random.Shared.Next(LEGENDARY.Count)].Clone();
 

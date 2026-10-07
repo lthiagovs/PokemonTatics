@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
@@ -20,9 +21,13 @@ public class Engine : Game
     private int _lastWidth;
     private int _lastHeight;
     private bool _ready;
+    private readonly string? _demo;
 
-    public Engine()
+    public Engine(string[] ARGS)
     {
+        int demo = Array.IndexOf(ARGS, "--demo");
+        if (demo >= 0) _demo = demo + 1 < ARGS.Length ? ARGS[demo + 1] : "demo";
+
         _graphics = new GraphicsDeviceManager(this) { HardwareModeSwitch = false };
 
         GameSettings.Load();
@@ -78,7 +83,8 @@ public class Engine : Game
         _lastHeight = GameRenderer.GetScreenHeight();
         _ready = true;
 
-        if (GameSettings.FULLSCREEN) GameHost.ToggleFullscreen();
+        if (_demo != null) DemoScene.Begin(_demo, Exit);
+        else if (GameSettings.FULLSCREEN) GameHost.ToggleFullscreen();
     }
 
     private static void BuildLayout()
@@ -125,6 +131,8 @@ public class Engine : Game
         else if (EvolutionScene.IsActive) EvolutionScene.Update();
         else if (GameGlobals.STATE == GameState.TITLE) UpdateTitle();
         else UpdateGame();
+
+        if (DemoScene.ACTIVE) DemoScene.Update();
 
         TypeHighlight.EndFrame();
         GameModal.EndFrame();
@@ -225,6 +233,7 @@ public class Engine : Game
         if (GameOverScene.IsActive) GameOverScene.Capture(GameRenderer.FrameTexture);
 
         GameRenderer.End();
+        if (DemoScene.ACTIVE) DemoScene.Capture(GraphicsDevice, _spriteBatch, GameRenderer.FrameTexture);
 
         base.Draw(gameTime);
     }
