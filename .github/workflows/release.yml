@@ -1,0 +1,37 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install Pillow
+      - run: python tools/pokemon_assets.py sprites --workers 8
+      - run: dotnet tool restore
+      - run: dotnet test Tests/PokemonTFT.Tests.csproj -c Release
+      - name: Package
+        shell: pwsh
+        run: |
+          foreach ($runtime in 'win-x64', 'linux-x64') {
+            $folder = "publish/$runtime"
+            dotnet publish PokemonTFT.csproj -c Release -r $runtime --self-contained true -o $folder
+            Copy-Item LICENSE, THIRD_PARTY.md, README.md $folder
+            Compress-Archive -Path "$folder/*" -DestinationPath "PokemonTactics-${{ github.ref_name }}-$runtime.zip"
+          }
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: PokemonTactics-*.zip
+          generate_release_notes: true

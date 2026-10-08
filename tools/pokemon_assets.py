@@ -751,6 +751,31 @@ def cmd_fetch(args):
     return report.summary()
 
 
+def cmd_sprites(args):
+    global USE_CACHE
+    USE_CACHE = not args.refresh
+
+    report = Report()
+    entries = list(read_existing_roster().values())
+    if not entries:
+        report.info("the roster is empty, nothing to download")
+        report.flush("sprites")
+        return report.summary()
+
+    bar = Progress("sprites", len(entries))
+
+    def grab(entry):
+        bar.advance(entry["name"])
+        return download_assets(entry, report, args.keep_existing)
+
+    with ThreadPoolExecutor(max_workers=args.workers) as pool:
+        list(pool.map(grab, entries))
+    bar.finish()
+
+    report.flush("sprites")
+    return report.summary()
+
+
 def resolve_sprite_dir(source, workspace):
     if os.path.isdir(source):
         return source
@@ -1205,6 +1230,14 @@ def main():
     fetcher.add_argument("--refresh", action="store_true",
                          help="ignore the HTTP cache and pull everything again")
     fetcher.set_defaults(func=cmd_fetch)
+
+    sprites = sub.add_parser("sprites", help="download the sprites of every pokemon already in the roster")
+    sprites.add_argument("--workers", type=int, default=8)
+    sprites.add_argument("--keep-existing", action="store_true",
+                         help="leave sprites already on disk alone")
+    sprites.add_argument("--refresh", action="store_true",
+                         help="ignore the HTTP cache and pull everything again")
+    sprites.set_defaults(func=cmd_sprites)
 
     importer = sub.add_parser("import", help="convert a manually downloaded pack")
     importer.add_argument("--name", required=True)
