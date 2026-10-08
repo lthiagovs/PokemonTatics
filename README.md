@@ -1,22 +1,34 @@
 # Pokemon Tactics
 
+[![CI](https://github.com/lthiagovs/PokemonTatics/actions/workflows/ci.yml/badge.svg)](https://github.com/lthiagovs/PokemonTatics/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 A Pokémon auto-battler made with MonoGame. Buy Pokémon in the shop, place them on
 your side of the board and press `START`: the fight plays out on its own, and every
 round is harder than the last.
 
 ![Six Pokémon from different generations against a Ho-Oh boss](docs/battle.gif)
 
-## Setup
+## Download
 
-Requires the [.NET 9 SDK](https://dotnet.microsoft.com/download), Python 3.9+ and
-the **Minecraft** font installed. Pokémon sprites are not in the repository, so
-import them once before running:
+Grab the latest zip for Windows or Linux from
+[Releases](https://github.com/lthiagovs/PokemonTatics/releases), extract it and run
+`PokemonTFT` (on Linux, `chmod +x PokemonTFT` first). Nothing else to install.
+
+## Build from source
+
+Requires the [.NET 9 SDK](https://dotnet.microsoft.com/download) and Python 3.9+.
+Pokémon sprites are not in the repository, so download the ones the roster uses
+once before running:
 
 ```bash
 pip install Pillow
-python tools/pokemon_assets.py fetch --range 1-151
+python tools/pokemon_assets.py sprites
 dotnet run
 ```
+
+`dotnet test` runs the test suite (roster, items, balance rules and headless
+battles). Pushing a `v*` tag builds the release zips through GitHub Actions.
 
 `dotnet run -- --demo <folder>` plays a scripted fight against a Ho-Oh boss and saves
 its frames to the folder; it is how the GIF above was recorded.
@@ -82,8 +94,20 @@ tools/     asset import scripts
 
 All balance numbers live in `Logic/Balance.cs`.
 
-## Credits
+## How it works
 
-Sprites by the [PMD Sprite Collab](https://sprites.pmdcollab.org) community.
-Pokémon is a trademark of Nintendo / Game Freak / The Pokémon Company; this is a
-non-commercial fan project.
+- Each fighting style has its own tactic: who it targets, how it moves and one trait
+  (a charge, a taunt, an aura, hit-and-run, a blink back, a sidestep or a flank).
+- Enemies are drawn around a power target that rises every round, taking evolutions
+  into account, so difficulty climbs without sudden walls.
+- The balance was tuned with a headless simulator that runs the real combat and
+  tactics code over thousands of games and style duels.
+
+## License
+
+The code is under the [MIT license](LICENSE). Sprites, data, art and the font keep
+their own terms, listed in [THIRD_PARTY.md](THIRD_PARTY.md): the sprites are
+[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) by the
+[PMD Sprite Collab](https://sprites.pmdcollab.org) community, so no build may be
+sold. Pokémon is a trademark of Nintendo / Game Freak / The Pokémon Company; this
+is a non-commercial fan project.
